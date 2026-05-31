@@ -78,3 +78,15 @@ struct CurrencyPickerView<VM: ViewModelProtocol>: View where VM.State == Currenc
         }
     }
 }
+
+#Preview("Currency Picker Loaded") {
+    CurrencyPickerView(
+        viewModel: StaticViewModel(
+            state: ExchangePreviewFixtures.currencyPickerLoaded))
+}
+
+#Preview("Currency Picker Loading") {
+    CurrencyPickerView(
+        viewModel: StaticViewModel(
+            state: ExchangePreviewFixtures.currencyPickerLoading))
+}

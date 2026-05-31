@@ -157,24 +157,20 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
 
 typealias DefaultExchangeListView = ExchangeListView<ExchangeListViewModel>
 
-#Preview("Exchange List Idle") {
+#Preview("Exchange List Loaded") {
     ExchangeListView(
         viewModel: StaticViewModel(
-            state: .initial().with(
-                topInputRaw: "9,999",
-                bottomInputRaw: "184,065.59",
-                availableCurrencies: [
-                    Currency(code: "ARS"),
-                    Currency(code: "BRL"),
-                    Currency(code: "COP"),
-                    Currency(code: "MXN"),
-                ],
-                rates: [
-                    ExchangeRate(
-                        baseCurrency: Currency(code: "USDC"),
-                        quoteCurrency: Currency(code: "MXN"),
-                        ask: 18.41,
-                        bid: 18.39,
-                        timestamp: .now),
-                ])))
+            state: ExchangePreviewFixtures.exchangeListLoaded))
+}
+
+#Preview("Exchange List Loading") {
+    ExchangeListView(
+        viewModel: StaticViewModel(
+            state: ExchangePreviewFixtures.exchangeListLoading))
+}
+
+#Preview("Exchange List Error") {
+    ExchangeListView(
+        viewModel: StaticViewModel(
+            state: ExchangePreviewFixtures.exchangeListError))
 }

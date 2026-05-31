@@ -32,3 +32,9 @@ struct ExchangeDetailView<VM: ViewModelProtocol>: View where VM.State == Exchang
 }
 
 typealias DefaultExchangeDetailView = ExchangeDetailView<ExchangeDetailViewModel>
+
+#Preview("Exchange Detail") {
+    ExchangeDetailView(
+        viewModel: StaticViewModel(
+            state: ExchangePreviewFixtures.exchangeDetail))
+}
