@@ -12,7 +12,7 @@ import Foundation
 // MARK: - DefaultRetryPolicyTests
 
 @Suite("DefaultRetryPolicy")
-enum DefaultRetryPolicyTests {
+struct DefaultRetryPolicyTests {
     // MARK: - Initialization
 
     @Suite("Initialization")

@@ -12,7 +12,7 @@ import Foundation
 // MARK: - EndpointTests
 
 @Suite("Endpoint")
-enum EndpointTests {
+struct EndpointTests {
     // MARK: - URL Construction
 
     @Suite("URL Construction")

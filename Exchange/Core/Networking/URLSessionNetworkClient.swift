@@ -41,7 +41,7 @@ final class URLSessionNetworkClient: NetworkClientProtocol {
         return data
     }
 
-    func request<T: Decodable & Sendable>(_ type: T.Type, endpoint: Endpoint) async throws -> T {
+    func request<T: Decodable>(_ type: T.Type, endpoint: Endpoint) async throws -> T {
         let data = try await requestData(endpoint: endpoint)
         do {
             return try makeDecoder().decode(type, from: data)

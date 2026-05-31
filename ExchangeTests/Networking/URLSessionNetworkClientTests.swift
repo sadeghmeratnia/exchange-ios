@@ -12,7 +12,7 @@ import Foundation
 // MARK: - URLSessionNetworkClientTests
 
 @Suite("URLSessionNetworkClient")
-enum URLSessionNetworkClientTests {
+struct URLSessionNetworkClientTests {
     // MARK: - Success
 
     @Suite("Success")
