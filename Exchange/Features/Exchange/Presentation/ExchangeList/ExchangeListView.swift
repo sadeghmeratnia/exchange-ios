@@ -11,15 +11,22 @@ import SwiftUI
 
 struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeListState, VM.Trigger == ExchangeListTrigger {
     @ObservedObject private var viewModel: VM
+    private let onItemSelected: (String) -> Void
 
-    init(viewModel: VM) {
+    init(viewModel: VM,
+         onItemSelected: @escaping (String) -> Void = { _ in }) {
         self.viewModel = viewModel
+        self.onItemSelected = onItemSelected
     }
 
     var body: some View {
         VStack(spacing: UIConstants.Spacing.xl) {
             header
             amountCard
+            Button("Open \(viewModel.state.bottomCurrency.code) details") {
+                onItemSelected(viewModel.state.bottomCurrency.code)
+            }
+            .buttonStyle(.bordered)
             phaseView
             Spacer()
         }
