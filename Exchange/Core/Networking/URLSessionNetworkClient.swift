@@ -47,7 +47,7 @@ final class URLSessionNetworkClient: NetworkClientProtocol {
             return try makeDecoder().decode(type, from: data)
         } catch {
             logger.log("✖ Decoding failed for \(T.self): \(error)", level: .error)
-            throw NetworkError.decoding(error)
+            throw NetworkError.decoding(underlying: error)
         }
     }
 

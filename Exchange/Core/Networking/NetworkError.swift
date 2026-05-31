@@ -15,6 +15,6 @@ enum NetworkError: Error {
     case invalidResponse
     case statusCode(Int)
     case transport(URLError)
-    case decoding(Error)
+    case decoding(underlying: Error)
     case unknown(underlying: Error)
 }

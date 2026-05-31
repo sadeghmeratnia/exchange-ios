@@ -11,6 +11,10 @@ import Foundation
 
 enum HTTPMethod: String {
     case get = "GET"
+    case post = "POST"
+    case put = "PUT"
+    case patch = "PATCH"
+    case delete = "DELETE"
 }
 
 // MARK: - Endpoint
@@ -21,6 +25,7 @@ struct Endpoint {
     let method: HTTPMethod
     let queryItems: [URLQueryItem]
     let headers: [String: String]
+    let body: Data?
     let timeoutInterval: TimeInterval
 
     init(baseURL: URL,
@@ -28,12 +33,14 @@ struct Endpoint {
          method: HTTPMethod = .get,
          queryItems: [URLQueryItem] = [],
          headers: [String: String] = [:],
+         body: Data? = nil,
          timeoutInterval: TimeInterval = 30) {
         self.baseURL = baseURL
         self.path = path
         self.method = method
         self.queryItems = queryItems
         self.headers = headers
+        self.body = body
         self.timeoutInterval = timeoutInterval
     }
 
@@ -52,6 +59,7 @@ struct Endpoint {
 
         var request = URLRequest(url: finalURL)
         request.httpMethod = method.rawValue
+        request.httpBody = body
         request.timeoutInterval = timeoutInterval
         for (key, value) in headers {
             request.setValue(value, forHTTPHeaderField: key)
