@@ -76,46 +76,18 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
     }
 
     private var currencyPickerSheet: some View {
-        NavigationStack {
-            Group {
-                if viewModel.state.availableCurrencies.isEmpty {
-                    ProgressView()
-                } else {
-                    List(viewModel.state.availableCurrencies, id: \.code) { currency in
-                        Button {
-                            viewModel.onTrigger(.currencySelected(currency.code))
-                        } label: {
-                            HStack(spacing: UIConstants.Spacing.md) {
-                                Text(flag(for: currency.code))
-                                Text(currency.code)
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                                if currency.code == viewModel.state.bottomCurrency.code {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(.green)
-                                } else {
-                                    Circle()
-                                        .stroke(Color(uiColor: .systemGray3), lineWidth: 1.5)
-                                        .frame(width: 18, height: 18)
-                                }
-                            }
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            .navigationTitle(L10n.Exchange.CurrencyPicker.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        viewModel.onTrigger(.currencyPickerDismissed)
-                    } label: {
-                        Image(systemName: "xmark")
-                    }
-                }
-            }
-        }
+        CurrencyPickerView(
+            viewModel: CurrencyPickerViewModel(
+                initialState: CurrencyPickerState(
+                    currencies: viewModel.state.availableCurrencies,
+                    selectedCurrencyCode: viewModel.state.bottomCurrency.code,
+                    isLoading: viewModel.state.availableCurrencies.isEmpty),
+                onSelectCurrency: { selectedCode in
+                    viewModel.onTrigger(.currencySelected(selectedCode))
+                },
+                onClose: {
+                    viewModel.onTrigger(.currencyPickerDismissed)
+                }))
     }
 
     private var pickerBinding: Binding<Bool> {
@@ -173,23 +145,6 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
 
     private func currencyTitle(for currency: Currency) -> String {
         currency.code == "USDC" ? "USDc" : currency.code
-    }
-
-    private func flag(for code: String) -> String {
-        switch code {
-        case "USDC":
-            "🇺🇸"
-        case "MXN":
-            "🇲🇽"
-        case "ARS":
-            "🇦🇷"
-        case "BRL":
-            "🇧🇷"
-        case "COP":
-            "🇨🇴"
-        default:
-            "🏳️"
-        }
     }
 }
 
