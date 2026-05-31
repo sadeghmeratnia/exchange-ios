@@ -17,6 +17,16 @@ struct AppCoordinator: View {
     }
 
     var body: some View {
-        ContentView()
+        ExchangeListView(
+            viewModel: StaticViewModel(
+                state: .initial().with(
+                    topInputRaw: "1.00",
+                    bottomInputRaw: "18.40",
+                    availableCurrencies: [
+                        Currency(code: "MXN"),
+                        Currency(code: "ARS"),
+                        Currency(code: "BRL"),
+                        Currency(code: "COP"),
+                    ])))
     }
 }
