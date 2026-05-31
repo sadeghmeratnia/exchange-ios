@@ -38,7 +38,7 @@ struct CurrencyAmountInputRow: View {
 
             Spacer()
 
-            TextField("0", text: Binding(get: { amountText }, set: onAmountChanged))
+            TextField("", text: Binding(get: { amountText }, set: onAmountChanged))
                 .font(.body.weight(.semibold))
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.trailing)

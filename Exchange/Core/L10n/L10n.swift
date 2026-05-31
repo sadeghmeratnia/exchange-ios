@@ -38,7 +38,7 @@ enum L10n {
         }
     }
 
-    private enum Key: String {
+    private enum Key: String.LocalizationValue {
         case exchangeCalculatorTitle = "exchange.calculator.title"
         case exchangeCurrencyPickerTitle = "exchange.currencyPicker.title"
         case exchangeStatusLive = "exchange.status.live"
@@ -48,15 +48,6 @@ enum L10n {
     }
 
     private static func tr(_ key: Key) -> String {
-        let localized = NSLocalizedString(
-            key.rawValue,
-            tableName: nil,
-            bundle: .main,
-            value: "",
-            comment: "")
-        #if DEBUG
-            assert(localized.isEmpty == false, "Missing localization key: \(key.rawValue)")
-        #endif
-        return localized.isEmpty ? key.rawValue : localized
+        return String(localized: key.rawValue)
     }
 }

@@ -77,26 +77,32 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
 
     private var currencyPickerSheet: some View {
         NavigationStack {
-            List(currenciesForPicker, id: \.code) { currency in
-                Button {
-                    viewModel.onTrigger(.currencySelected(currency.code))
-                } label: {
-                    HStack(spacing: UIConstants.Spacing.md) {
-                        Text(flag(for: currency.code))
-                        Text(currency.code)
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        if currency.code == viewModel.state.bottomCurrency.code {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                        } else {
-                            Circle()
-                                .stroke(Color(uiColor: .systemGray3), lineWidth: 1.5)
-                                .frame(width: 18, height: 18)
+            Group {
+                if viewModel.state.availableCurrencies.isEmpty {
+                    ProgressView()
+                } else {
+                    List(viewModel.state.availableCurrencies, id: \.code) { currency in
+                        Button {
+                            viewModel.onTrigger(.currencySelected(currency.code))
+                        } label: {
+                            HStack(spacing: UIConstants.Spacing.md) {
+                                Text(flag(for: currency.code))
+                                Text(currency.code)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                if currency.code == viewModel.state.bottomCurrency.code {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                } else {
+                                    Circle()
+                                        .stroke(Color(uiColor: .systemGray3), lineWidth: 1.5)
+                                        .frame(width: 18, height: 18)
+                                }
+                            }
                         }
+                        .buttonStyle(.plain)
                     }
                 }
-                .buttonStyle(.plain)
             }
             .navigationTitle(L10n.Exchange.CurrencyPicker.title)
             .navigationBarTitleDisplayMode(.inline)
@@ -110,18 +116,6 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
                 }
             }
         }
-    }
-
-    private var currenciesForPicker: [Currency] {
-        if viewModel.state.availableCurrencies.isEmpty {
-            return [
-                Currency(code: "ARS"),
-                Currency(code: "BRL"),
-                Currency(code: "COP"),
-                Currency(code: "MXN"),
-            ]
-        }
-        return viewModel.state.availableCurrencies
     }
 
     private var pickerBinding: Binding<Bool> {
@@ -145,9 +139,15 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
         case .loaded:
             EmptyView()
         case let .error(message):
-            Text(message)
-                .font(.footnote)
-                .foregroundStyle(.red)
+            HStack(spacing: UIConstants.Spacing.md) {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+                Button("Retry") {
+                    viewModel.onTrigger(.retryTapped)
+                }
+                .buttonStyle(.bordered)
+            }
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
@@ -157,9 +157,9 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
             $0.baseCurrency.code == viewModel.state.topCurrency.code &&
                 $0.quoteCurrency.code == viewModel.state.bottomCurrency.code
         }) else {
-            return "1 \(currencyTitle(for: viewModel.state.topCurrency)) = -- \(viewModel.state.bottomCurrency.code)"
+            return "\(L10n.Exchange.Status.live) • 1 \(currencyTitle(for: viewModel.state.topCurrency)) = -- \(viewModel.state.bottomCurrency.code)"
         }
-        return "1 \(currencyTitle(for: viewModel.state.topCurrency)) = \(format(decimal: quoteRate.mid)) \(viewModel.state.bottomCurrency.code)"
+        return "\(L10n.Exchange.Status.live) • 1 \(currencyTitle(for: viewModel.state.topCurrency)) = \(format(decimal: quoteRate.mid)) \(viewModel.state.bottomCurrency.code)"
     }
 
     private func format(decimal: Decimal) -> String {

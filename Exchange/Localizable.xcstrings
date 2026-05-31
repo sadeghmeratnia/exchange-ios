@@ -1,11 +1,10 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "0" : {
+    "" : {
 
     },
     "exchange.calculator.title" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -16,7 +15,6 @@
       }
     },
     "exchange.currencyPicker.title" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -27,7 +25,6 @@
       }
     },
     "exchange.status.lastUpdated" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -38,7 +35,6 @@
       }
     },
     "exchange.status.live" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -49,7 +45,6 @@
       }
     },
     "exchange.status.notRealtime" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -60,7 +55,6 @@
       }
     },
     "exchange.status.updated" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -70,7 +64,7 @@
         }
       }
     },
-    "Hello, world!" : {
+    "Retry" : {
 
     }
   },
