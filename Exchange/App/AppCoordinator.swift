@@ -10,23 +10,24 @@ import SwiftUI
 // MARK: - AppCoordinator
 
 struct AppCoordinator: View {
-    private let appContainer: AppContainer
+    @StateObject private var viewModel: ExchangeListViewModel
 
     init(appContainer: AppContainer) {
-        self.appContainer = appContainer
+        let remoteDataSource = ExchangeRemoteDataSource(networkClient: appContainer.networkClient)
+        let localCacheDataSource = ExchangeLocalCacheDataSource()
+        let repository = ExchangeRepository(
+            remoteDataSource: remoteDataSource,
+            localCacheDataSource: localCacheDataSource)
+        let getRatesUseCase = GetExchangeRatesUseCase(repository: repository)
+        let getCurrenciesUseCase = GetAvailableCurrenciesUseCase(repository: repository)
+
+        _viewModel = StateObject(
+            wrappedValue: ExchangeListViewModel(
+                getExchangeRatesUseCase: getRatesUseCase,
+                getAvailableCurrenciesUseCase: getCurrenciesUseCase))
     }
 
     var body: some View {
-        ExchangeListView(
-            viewModel: StaticViewModel(
-                state: .initial().with(
-                    topInputRaw: "1.00",
-                    bottomInputRaw: "18.40",
-                    availableCurrencies: [
-                        Currency(code: "MXN"),
-                        Currency(code: "ARS"),
-                        Currency(code: "BRL"),
-                        Currency(code: "COP"),
-                    ])))
+        ExchangeListView(viewModel: viewModel)
     }
 }

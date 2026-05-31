@@ -11,16 +11,17 @@ import Foundation
 
 struct ExchangeListReducer {
     typealias ReduceOutput = (state: ExchangeListState, effect: ExchangeListEffect?)
+    private let convertAmountUseCase = ConvertAmountUseCase()
 
     func reduce(state: ExchangeListState, action: ExchangeListAction) -> ReduceOutput {
         switch action {
         case .startLoad:
             let nextState = state.startingInitialLoad()
-            let currencies = [state.bottomCurrency.code]
-            return (nextState, .fetchRates(currencies: currencies))
+            return (nextState, .fetchRates(currencies: requestedCurrencyCodes(from: nextState)))
 
         case let .ratesLoaded(.success(rates)):
-            let nextState = state.with(phase: .loaded, rates: rates, errorMessage: .some(nil))
+            let loadedState = state.with(phase: .loaded, rates: rates, errorMessage: .some(nil))
+            let nextState = recalculateOppositeAmount(from: loadedState)
             return (nextState, nil)
 
         case let .ratesLoaded(.failure(error)):
@@ -32,20 +33,24 @@ struct ExchangeListReducer {
             return (nextState, nil)
 
         case let .setTopInput(value):
-            let nextState = state.with(topInputRaw: value, activeInput: .top)
+            let editingState = state.with(topInputRaw: value, activeInput: .top)
+            let nextState = recalculateOppositeAmount(from: editingState)
             return (nextState, nil)
 
         case let .setBottomInput(value):
-            let nextState = state.with(bottomInputRaw: value, activeInput: .bottom)
+            let editingState = state.with(bottomInputRaw: value, activeInput: .bottom)
+            let nextState = recalculateOppositeAmount(from: editingState)
             return (nextState, nil)
 
         case .performSwap:
-            let nextState = state.with(
+            let swappedState = state.with(
                 topCurrency: state.bottomCurrency,
                 bottomCurrency: state.topCurrency,
                 topInputRaw: state.bottomInputRaw,
-                bottomInputRaw: state.topInputRaw)
-            return (nextState, nil)
+                bottomInputRaw: state.topInputRaw,
+                activeInput: state.activeInput == .top ? .bottom : .top)
+            let nextState = recalculateOppositeAmount(from: swappedState)
+            return (nextState, .fetchRates(currencies: requestedCurrencyCodes(from: nextState)))
 
         case .openPicker:
             let nextState = state.with(isCurrencyPickerPresented: true)
@@ -56,18 +61,71 @@ struct ExchangeListReducer {
             return (nextState, nil)
 
         case let .applyCurrency(code):
-            let nextState = state.with(
+            let selectedState = state.with(
                 bottomCurrency: Currency(code: code),
                 isCurrencyPickerPresented: false)
-            return (nextState, .fetchRates(currencies: [code]))
+            let nextState = recalculateOppositeAmount(from: selectedState)
+            return (nextState, .fetchRates(currencies: requestedCurrencyCodes(from: nextState)))
 
         case .retry:
             let nextState = state.startingRefresh()
-            return (nextState, .fetchRates(currencies: [state.bottomCurrency.code]))
+            return (nextState, .fetchRates(currencies: requestedCurrencyCodes(from: nextState)))
 
         case .clearError:
             let nextState = state.with(errorMessage: .some(nil))
             return (nextState, nil)
         }
+    }
+}
+
+// MARK: - Helpers
+
+private extension ExchangeListReducer {
+    func requestedCurrencyCodes(from state: ExchangeListState) -> [String] {
+        let codes = [state.topCurrency.code, state.bottomCurrency.code]
+            .filter { $0.uppercased() != "USDC" }
+        return Array(Set(codes)).sorted()
+    }
+
+    func recalculateOppositeAmount(from state: ExchangeListState) -> ExchangeListState {
+        switch state.activeInput {
+        case .top:
+            guard let amount = decimal(from: state.topInputRaw) else {
+                return state.with(bottomInputRaw: "")
+            }
+            let converted = convertAmountUseCase.execute(
+                amount: amount,
+                from: state.topCurrency,
+                to: state.bottomCurrency,
+                rates: state.rates)
+            return state.with(bottomInputRaw: converted.map(format(decimal:)) ?? "")
+
+        case .bottom:
+            guard let amount = decimal(from: state.bottomInputRaw) else {
+                return state.with(topInputRaw: "")
+            }
+            let converted = convertAmountUseCase.execute(
+                amount: amount,
+                from: state.bottomCurrency,
+                to: state.topCurrency,
+                rates: state.rates)
+            return state.with(topInputRaw: converted.map(format(decimal:)) ?? "")
+        }
+    }
+
+    func decimal(from rawValue: String) -> Decimal? {
+        let cleaned = rawValue.replacingOccurrences(of: ",", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard cleaned.isEmpty == false else { return nil }
+        return Decimal(string: cleaned, locale: Locale(identifier: "en_US_POSIX"))
+    }
+
+    func format(decimal: Decimal) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 2
+        formatter.maximumFractionDigits = 6
+        return formatter.string(from: decimal as NSDecimalNumber) ?? "\(decimal)"
     }
 }

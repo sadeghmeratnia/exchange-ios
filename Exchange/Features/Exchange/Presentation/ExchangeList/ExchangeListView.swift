@@ -238,6 +238,8 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
     }
 }
 
+typealias DefaultExchangeListView = ExchangeListView<ExchangeListViewModel>
+
 #Preview("Exchange List Idle") {
     ExchangeListView(
         viewModel: StaticViewModel(
