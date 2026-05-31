@@ -39,9 +39,7 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
         VStack(alignment: .leading, spacing: UIConstants.Spacing.xs) {
             Text(L10n.Exchange.calculatorTitle)
                 .font(.title3.weight(.semibold))
-            Text(rateSubtitle)
-                .font(.footnote)
-                .foregroundStyle(.green)
+            RateStatusBanner(text: rateSubtitle, isRealtime: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -49,18 +47,20 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
     private var amountCard: some View {
         ZStack {
             VStack(spacing: 0) {
-                amountRow(
-                    currency: viewModel.state.topCurrency,
+                CurrencyAmountInputRow(
+                    currencyCode: viewModel.state.topCurrency.code,
                     amountText: viewModel.state.topInputRaw,
                     isSelectableCurrency: false,
+                    onCurrencyTap: {},
                     onAmountChanged: { viewModel.onTrigger(.topAmountChanged($0)) })
 
                 Divider()
 
-                amountRow(
-                    currency: viewModel.state.bottomCurrency,
+                CurrencyAmountInputRow(
+                    currencyCode: viewModel.state.bottomCurrency.code,
                     amountText: viewModel.state.bottomInputRaw,
                     isSelectableCurrency: true,
+                    onCurrencyTap: { viewModel.onTrigger(.currencyTapped) },
                     onAmountChanged: { viewModel.onTrigger(.bottomAmountChanged($0)) })
             }
             .background(Color.white)
@@ -69,55 +69,10 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
                 RoundedRectangle(cornerRadius: UIConstants.CornerRadius.lg)
                     .stroke(Color(uiColor: .separator), lineWidth: 0.5))
 
-            Button {
+            SwapButton {
                 viewModel.onTrigger(.swapTapped)
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(Color.green)
-                        .frame(width: 30, height: 30)
-                    Image(systemName: "arrow.up.arrow.down")
-                        .font(.footnote.weight(.bold))
-                        .foregroundStyle(.white)
-                }
             }
-            .buttonStyle(.plain)
         }
-    }
-
-    private func amountRow(currency: Currency,
-                           amountText: String,
-                           isSelectableCurrency: Bool,
-                           onAmountChanged: @escaping (String) -> Void) -> some View {
-        HStack(spacing: UIConstants.Spacing.md) {
-            Button {
-                if isSelectableCurrency {
-                    viewModel.onTrigger(.currencyTapped)
-                }
-            } label: {
-                HStack(spacing: UIConstants.Spacing.sm) {
-                    Text(flag(for: currency.code))
-                    Text(currencyTitle(for: currency))
-                        .font(.subheadline.weight(.semibold))
-                    if isSelectableCurrency {
-                        Image(systemName: "chevron.down")
-                            .font(.caption.weight(.semibold))
-                    }
-                }
-                .foregroundStyle(.primary)
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-
-            TextField("0", text: Binding(get: { amountText }, set: onAmountChanged))
-                .font(.body.weight(.semibold))
-                .keyboardType(.decimalPad)
-                .multilineTextAlignment(.trailing)
-                .frame(maxWidth: 150)
-        }
-        .padding(.horizontal, UIConstants.Spacing.md)
-        .padding(.vertical, UIConstants.Spacing.lg)
     }
 
     private var currencyPickerSheet: some View {
