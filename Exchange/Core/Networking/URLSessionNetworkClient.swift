@@ -41,7 +41,7 @@ final class URLSessionNetworkClient: NetworkClientProtocol {
         return data
     }
 
-    func request<T: Decodable>(_ type: T.Type, endpoint: Endpoint) async throws -> T {
+    func request<T: Decodable & Sendable>(_ type: T.Type, endpoint: Endpoint) async throws -> T {
         let data = try await requestData(endpoint: endpoint)
         do {
             return try makeDecoder().decode(type, from: data)
@@ -61,8 +61,13 @@ final class URLSessionNetworkClient: NetworkClientProtocol {
             }
 
             guard (200 ... 299).contains(httpResponse.statusCode) else {
+                let context = RetryContext(
+                    attempt: attempt,
+                    method: request.httpMethod,
+                    failure: .httpStatus(httpResponse.statusCode))
                 return try await retryOrThrow(
                     NetworkError.statusCode(httpResponse.statusCode),
+                    context: context,
                     request: request,
                     attempt: attempt)
             }
@@ -75,8 +80,13 @@ final class URLSessionNetworkClient: NetworkClientProtocol {
             throw CancellationError()
 
         } catch let urlError as URLError {
+            let context = RetryContext(
+                attempt: attempt,
+                method: request.httpMethod,
+                failure: .transport(urlError.code))
             return try await retryOrThrow(
                 NetworkError.transport(urlError),
+                context: context,
                 request: request,
                 attempt: attempt)
 
@@ -90,11 +100,12 @@ final class URLSessionNetworkClient: NetworkClientProtocol {
     }
 
     private func retryOrThrow(_ error: NetworkError,
+                              context: RetryContext,
                               request: URLRequest,
                               attempt: Int) async throws -> Data {
-        if retryPolicy.shouldRetry(error: error, attempt: attempt) {
+        if retryPolicy.shouldRetry(context: context) {
             logger.log("⚠️ Retrying attempt \(attempt + 1): \(error)", level: .warning)
-            try await Task.sleep(nanoseconds: retryPolicy.delay(for: attempt))
+            try await Task.sleep(nanoseconds: retryPolicy.delay(for: context))
             return try await execute(request: request, attempt: attempt + 1)
         }
         logger.log("✖ Non-retryable: \(error)", level: .error)
