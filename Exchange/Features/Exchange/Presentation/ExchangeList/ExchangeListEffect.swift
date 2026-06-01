@@ -10,6 +10,6 @@ import Foundation
 // MARK: - ExchangeListEffect
 
 enum ExchangeListEffect: Equatable {
+    case bootstrap(currencies: [String])
     case fetchRates(currencies: [String])
-    case fetchCurrencies
 }

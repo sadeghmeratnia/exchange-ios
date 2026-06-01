@@ -20,7 +20,7 @@ struct ExchangeListReducerTests {
         let output = sut.reduce(state: state, action: .startLoad)
 
         #expect(output.state.phase == .loading(.initial))
-        #expect(output.effect == .fetchRates(currencies: ["MXN"]))
+        #expect(output.effect == .bootstrap(currencies: ["MXN"]))
     }
 
     @Test("ratesLoaded success updates rates and recalculates opposite amount")

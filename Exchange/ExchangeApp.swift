@@ -31,7 +31,7 @@ struct ExchangeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            AppCoordinator(appContainer: appContainer)
+            ExchangeFeatureBuilder(appContainer: appContainer).makeRootView()
         }
     }
 }

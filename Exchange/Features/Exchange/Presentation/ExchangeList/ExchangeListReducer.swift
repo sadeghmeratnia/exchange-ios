@@ -17,7 +17,7 @@ struct ExchangeListReducer {
         switch action {
         case .startLoad:
             let nextState = state.startingInitialLoad()
-            return (nextState, .fetchRates(currencies: requestedCurrencyCodes(from: nextState)))
+            return (nextState, .bootstrap(currencies: requestedCurrencyCodes(from: nextState)))
 
         case let .ratesLoaded(.success(snapshot)):
             let loadedState = state.with(

@@ -40,7 +40,6 @@ final class ExchangeListViewModel: ExchangeListViewModelProtocol {
         switch trigger {
         case .screenAppeared:
             send(.startLoad)
-            start(effect: .fetchCurrencies)
 
         case let .topAmountChanged(value):
             send(.setTopInput(value))
@@ -79,7 +78,8 @@ final class ExchangeListViewModel: ExchangeListViewModelProtocol {
 
     func run(_ effect: ExchangeListEffect) async {
         switch effect {
-        case let .fetchRates(currencies):
+        case let .bootstrap(currencies):
+            async let availableCurrencies = getAvailableCurrenciesUseCase.execute()
             do {
                 let rates = try await getExchangeRatesUseCase.execute(currencies: currencies)
                 guard Task.isCancelled == false else { return }
@@ -91,10 +91,21 @@ final class ExchangeListViewModel: ExchangeListViewModelProtocol {
                 send(.ratesLoaded(.failure(error)))
             }
 
-        case .fetchCurrencies:
-            let currencies = await getAvailableCurrenciesUseCase.execute()
+            let currencies = await availableCurrencies
             guard Task.isCancelled == false else { return }
             send(.currenciesLoaded(currencies))
+
+        case let .fetchRates(currencies):
+            do {
+                let rates = try await getExchangeRatesUseCase.execute(currencies: currencies)
+                guard Task.isCancelled == false else { return }
+                send(.ratesLoaded(.success(rates)))
+            } catch is CancellationError {
+                return
+            } catch {
+                guard Task.isCancelled == false else { return }
+                send(.ratesLoaded(.failure(error)))
+            }
         }
     }
 }
@@ -104,7 +115,6 @@ final class ExchangeListViewModel: ExchangeListViewModelProtocol {
 private extension ExchangeListViewModel {
     enum EffectTaskKind: Hashable {
         case rates
-        case currencies
     }
 
     func start(effect: ExchangeListEffect) {
@@ -113,16 +123,16 @@ private extension ExchangeListViewModel {
         effectTasks[kind] = Task { [weak self] in
             guard let self else { return }
             await self.run(effect)
-            await self.clearTask(for: kind)
+            self.clearTask(for: kind)
         }
     }
 
     func taskKind(for effect: ExchangeListEffect) -> EffectTaskKind {
         switch effect {
+        case .bootstrap:
+            .rates
         case .fetchRates:
             .rates
-        case .fetchCurrencies:
-            .currencies
         }
     }
 
