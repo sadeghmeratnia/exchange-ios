@@ -4,6 +4,16 @@
     "" : {
 
     },
+    "Currency" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currency"
+          }
+        }
+      }
+    },
     "exchange.action.retry" : {
       "localizations" : {
         "en" : {

@@ -15,8 +15,24 @@ struct CurrencyAmountInputRow: View {
     let isSelectableCurrency: Bool
     let onCurrencyTap: () -> Void
     let onAmountChanged: (String) -> Void
+    private let currencyDisplayProvider: any CurrencyDisplayProviding
+
+    init(currencyCode: String,
+         amountText: String,
+         isSelectableCurrency: Bool,
+         onCurrencyTap: @escaping () -> Void,
+         onAmountChanged: @escaping (String) -> Void,
+         currencyDisplayProvider: any CurrencyDisplayProviding = CurrencyDisplayProvider()) {
+        self.currencyCode = currencyCode
+        self.amountText = amountText
+        self.isSelectableCurrency = isSelectableCurrency
+        self.onCurrencyTap = onCurrencyTap
+        self.onAmountChanged = onAmountChanged
+        self.currencyDisplayProvider = currencyDisplayProvider
+    }
 
     var body: some View {
+        let display = currencyDisplayProvider.display(for: currencyCode)
         HStack(spacing: UIConstants.Spacing.md) {
             Button {
                 if isSelectableCurrency {
@@ -24,8 +40,8 @@ struct CurrencyAmountInputRow: View {
                 }
             } label: {
                 HStack(spacing: UIConstants.Spacing.sm) {
-                    Text(flag(for: currencyCode))
-                    Text(currencyTitle(for: currencyCode))
+                    currencyIcon(for: display)
+                    Text(display.title)
                         .font(.subheadline.weight(.semibold))
                     if isSelectableCurrency {
                         Image(systemName: "chevron.down")
@@ -47,27 +63,15 @@ struct CurrencyAmountInputRow: View {
         .padding(.horizontal, UIConstants.Spacing.md)
         .padding(.vertical, UIConstants.Spacing.lg)
     }
-}
 
-private extension CurrencyAmountInputRow {
-    func currencyTitle(for code: String) -> String {
-        code == "USDC" ? "USDc" : code
-    }
-
-    func flag(for code: String) -> String {
-        switch code {
-        case "USDC":
-            "🇺🇸"
-        case "MXN":
-            "🇲🇽"
-        case "ARS":
-            "🇦🇷"
-        case "BRL":
-            "🇧🇷"
-        case "COP":
-            "🇨🇴"
-        default:
-            "🏳️"
+    @ViewBuilder
+    private func currencyIcon(for display: CurrencyDisplay) -> some View {
+        if let flag = display.flagEmoji {
+            Text(flag)
+        } else {
+            Image(systemName: display.fallbackSymbolName ?? "globe")
+                .font(.subheadline)
+                .accessibilityLabel("Currency")
         }
     }
 }

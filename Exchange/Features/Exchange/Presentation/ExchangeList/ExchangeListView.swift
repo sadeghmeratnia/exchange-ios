@@ -11,9 +11,12 @@ import SwiftUI
 
 struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeListState, VM.Trigger == ExchangeListTrigger {
     @ObservedObject private var viewModel: VM
+    private let currencyDisplayProvider: any CurrencyDisplayProviding
 
-    init(viewModel: VM) {
+    init(viewModel: VM,
+         currencyDisplayProvider: any CurrencyDisplayProviding = CurrencyDisplayProvider()) {
         self.viewModel = viewModel
+        self.currencyDisplayProvider = currencyDisplayProvider
     }
 
     var body: some View {
@@ -52,7 +55,8 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
                     amountText: viewModel.state.topInputRaw,
                     isSelectableCurrency: viewModel.state.topCurrency.isUSDc == false,
                     onCurrencyTap: { viewModel.onTrigger(.currencyTapped(row: .top)) },
-                    onAmountChanged: { viewModel.onTrigger(.topAmountChanged($0)) })
+                    onAmountChanged: { viewModel.onTrigger(.topAmountChanged($0)) },
+                    currencyDisplayProvider: currencyDisplayProvider)
 
                 Divider()
 
@@ -61,7 +65,8 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
                     amountText: viewModel.state.bottomInputRaw,
                     isSelectableCurrency: viewModel.state.bottomCurrency.isUSDc == false,
                     onCurrencyTap: { viewModel.onTrigger(.currencyTapped(row: .bottom)) },
-                    onAmountChanged: { viewModel.onTrigger(.bottomAmountChanged($0)) })
+                    onAmountChanged: { viewModel.onTrigger(.bottomAmountChanged($0)) },
+                    currencyDisplayProvider: currencyDisplayProvider)
             }
             .background(Color(uiColor: .secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: UIConstants.CornerRadius.lg))
@@ -87,7 +92,8 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
                 },
                 onClose: {
                     viewModel.onTrigger(.currencyPickerDismissed)
-                }))
+                }),
+            currencyDisplayProvider: currencyDisplayProvider)
     }
 
     private var pickerBinding: Binding<Bool> {
@@ -147,7 +153,7 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
     }
 
     private func currencyTitle(for currency: Currency) -> String {
-        currency.code == "USDC" ? "USDc" : currency.code
+        currencyDisplayProvider.display(for: currency.code).title
     }
 
     private var pickerSelectedCode: String {

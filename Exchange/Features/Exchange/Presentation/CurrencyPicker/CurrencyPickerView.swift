@@ -11,9 +11,12 @@ import SwiftUI
 
 struct CurrencyPickerView<VM: ViewModelProtocol>: View where VM.State == CurrencyPickerState, VM.Trigger == CurrencyPickerTrigger {
     @ObservedObject private var viewModel: VM
+    private let currencyDisplayProvider: any CurrencyDisplayProviding
 
-    init(viewModel: VM) {
+    init(viewModel: VM,
+         currencyDisplayProvider: any CurrencyDisplayProviding = CurrencyDisplayProvider()) {
         self.viewModel = viewModel
+        self.currencyDisplayProvider = currencyDisplayProvider
     }
 
     var body: some View {
@@ -25,12 +28,13 @@ struct CurrencyPickerView<VM: ViewModelProtocol>: View where VM.State == Currenc
                     ProgressView()
                 } else {
                     List(viewModel.state.currencies, id: \.code) { currency in
+                        let display = currencyDisplayProvider.display(for: currency.code)
                         Button {
                             viewModel.onTrigger(.currencyTapped(currency.code))
                         } label: {
                             HStack(spacing: UIConstants.Spacing.md) {
-                                Text(flag(for: currency.code))
-                                Text(currency.code)
+                                currencyIcon(for: display)
+                                Text(display.title)
                                     .foregroundStyle(.primary)
                                 Spacer()
                                 if currency.code == viewModel.state.selectedCurrencyCode {
@@ -61,20 +65,14 @@ struct CurrencyPickerView<VM: ViewModelProtocol>: View where VM.State == Currenc
         }
     }
 
-    private func flag(for code: String) -> String {
-        switch code {
-        case "USDC":
-            "🇺🇸"
-        case "MXN":
-            "🇲🇽"
-        case "ARS":
-            "🇦🇷"
-        case "BRL":
-            "🇧🇷"
-        case "COP":
-            "🇨🇴"
-        default:
-            "🏳️"
+    @ViewBuilder
+    private func currencyIcon(for display: CurrencyDisplay) -> some View {
+        if let flag = display.flagEmoji {
+            Text(flag)
+        } else {
+            Image(systemName: display.fallbackSymbolName ?? "globe")
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("Currency")
         }
     }
 }
