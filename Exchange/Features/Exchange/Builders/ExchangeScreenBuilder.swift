@@ -20,9 +20,4 @@ final class ExchangeScreenBuilder {
     func makeExchangeListView() -> DefaultExchangeListView {
         DefaultExchangeListView(viewModel: exchangeListViewModel)
     }
-
-    func makeExchangeDetailView(currencyCode: String) -> DefaultExchangeDetailView {
-        let viewModel = ExchangeDetailViewModel(initialState: .initial(currencyCode: currencyCode))
-        return DefaultExchangeDetailView(viewModel: viewModel)
-    }
 }

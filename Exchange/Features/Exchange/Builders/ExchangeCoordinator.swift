@@ -5,31 +5,19 @@
 //  Created by Sadegh on 31/05/2026.
 //
 
-import Combine
-import SwiftUI
+import Foundation
 
 // MARK: - ExchangeCoordinator
 
 @MainActor
-final class ExchangeCoordinator: ObservableObject {
-    enum Destination: Hashable {
-        case detail(currencyCode: String)
-    }
-
-    @Published var navigationPath = NavigationPath()
-
+final class ExchangeCoordinator {
     let screenBuilder: ExchangeScreenBuilder
 
     init(screenBuilder: ExchangeScreenBuilder) {
         self.screenBuilder = screenBuilder
     }
 
-    func showDetail(currencyCode: String) {
-        navigationPath.append(Destination.detail(currencyCode: currencyCode))
-    }
-
-    func dismissDetail() {
-        guard navigationPath.isEmpty == false else { return }
-        navigationPath.removeLast()
+    func handleNavigation() {
+        // Navigations will be handled here from coordinator.
     }
 }

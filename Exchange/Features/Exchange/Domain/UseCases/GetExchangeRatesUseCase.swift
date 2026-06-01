@@ -16,7 +16,7 @@ struct GetExchangeRatesUseCase {
         self.repository = repository
     }
 
-    func execute(currencies: [String]) async throws -> [ExchangeRate] {
+    func execute(currencies: [String]) async throws -> ExchangeRatesSnapshot {
         try await repository.fetchRates(for: currencies)
     }
 }

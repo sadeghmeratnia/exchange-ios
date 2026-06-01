@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: - ExchangeRate
 
-struct ExchangeRate: Equatable, Sendable {
+struct ExchangeRate: Equatable, Sendable, Codable {
     let baseCurrency: Currency
     let quoteCurrency: Currency
     let ask: Decimal

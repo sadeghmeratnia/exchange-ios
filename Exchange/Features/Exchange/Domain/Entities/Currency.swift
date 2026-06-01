@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: - Currency
 
-struct Currency: Hashable, Sendable {
+struct Currency: Hashable, Sendable, Codable {
     let code: String
 
     init(code: String) {

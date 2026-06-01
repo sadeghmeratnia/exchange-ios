@@ -11,12 +11,12 @@ import Foundation
 
 enum ExchangeListAction {
     case startLoad
-    case ratesLoaded(Result<[ExchangeRate], Error>)
+    case ratesLoaded(Result<ExchangeRatesSnapshot, Error>)
     case currenciesLoaded([Currency])
     case setTopInput(String)
     case setBottomInput(String)
     case performSwap
-    case openPicker
+    case openPicker(row: ExchangeListTrigger.CurrencyRow)
     case closePicker
     case applyCurrency(String)
     case retry

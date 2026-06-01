@@ -39,7 +39,7 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
         VStack(alignment: .leading, spacing: UIConstants.Spacing.xs) {
             Text(L10n.Exchange.calculatorTitle)
                 .font(.title3.weight(.semibold))
-            RateStatusBanner(text: rateSubtitle, isRealtime: true)
+            RateStatusBanner(text: rateSubtitle, isRealtime: viewModel.state.isRealtimeRates)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -50,8 +50,8 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
                 CurrencyAmountInputRow(
                     currencyCode: viewModel.state.topCurrency.code,
                     amountText: viewModel.state.topInputRaw,
-                    isSelectableCurrency: false,
-                    onCurrencyTap: {},
+                    isSelectableCurrency: viewModel.state.topCurrency.isUSDc == false,
+                    onCurrencyTap: { viewModel.onTrigger(.currencyTapped(row: .top)) },
                     onAmountChanged: { viewModel.onTrigger(.topAmountChanged($0)) })
 
                 Divider()
@@ -59,11 +59,11 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
                 CurrencyAmountInputRow(
                     currencyCode: viewModel.state.bottomCurrency.code,
                     amountText: viewModel.state.bottomInputRaw,
-                    isSelectableCurrency: true,
-                    onCurrencyTap: { viewModel.onTrigger(.currencyTapped) },
+                    isSelectableCurrency: viewModel.state.bottomCurrency.isUSDc == false,
+                    onCurrencyTap: { viewModel.onTrigger(.currencyTapped(row: .bottom)) },
                     onAmountChanged: { viewModel.onTrigger(.bottomAmountChanged($0)) })
             }
-            .background(Color.white)
+            .background(Color(uiColor: .secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: UIConstants.CornerRadius.lg))
             .overlay(
                 RoundedRectangle(cornerRadius: UIConstants.CornerRadius.lg)
@@ -80,7 +80,7 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
             viewModel: CurrencyPickerViewModel(
                 initialState: CurrencyPickerState(
                     currencies: viewModel.state.availableCurrencies,
-                    selectedCurrencyCode: viewModel.state.bottomCurrency.code,
+                    selectedCurrencyCode: pickerSelectedCode,
                     isLoading: viewModel.state.availableCurrencies.isEmpty),
                 onSelectCurrency: { selectedCode in
                     viewModel.onTrigger(.currencySelected(selectedCode))
@@ -125,26 +125,54 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
     }
 
     private var rateSubtitle: String {
-        guard let quoteRate = viewModel.state.rates.first(where: {
-            $0.baseCurrency.code == viewModel.state.topCurrency.code &&
-                $0.quoteCurrency.code == viewModel.state.bottomCurrency.code
-        }) else {
-            return "\(L10n.Exchange.Status.live) • 1 \(currencyTitle(for: viewModel.state.topCurrency)) = -- \(viewModel.state.bottomCurrency.code)"
+        let statusPrefix = viewModel.state.isRealtimeRates
+            ? L10n.Exchange.Status.live
+            : L10n.Exchange.Status.notRealtime
+        let updateText = freshnessText()
+        let oneUnit = Decimal(integerLiteral: 1)
+        let convertedRate = ConvertAmountUseCase().execute(
+            amount: oneUnit,
+            from: viewModel.state.topCurrency,
+            to: viewModel.state.bottomCurrency,
+            rates: viewModel.state.rates)
+
+        guard let convertedRate else {
+            return "\(statusPrefix) • \(updateText) • 1 \(currencyTitle(for: viewModel.state.topCurrency)) = -- \(viewModel.state.bottomCurrency.code)"
         }
-        return "\(L10n.Exchange.Status.live) • 1 \(currencyTitle(for: viewModel.state.topCurrency)) = \(format(decimal: quoteRate.mid)) \(viewModel.state.bottomCurrency.code)"
+        return "\(statusPrefix) • \(updateText) • 1 \(currencyTitle(for: viewModel.state.topCurrency)) = \(format(decimal: convertedRate)) \(viewModel.state.bottomCurrency.code)"
     }
 
     private func format(decimal: Decimal) -> String {
-        let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 4
-        return formatter.string(from: decimal as NSDecimalNumber) ?? "\(decimal)"
+        LocalizedNumberFormatting.formatRate(decimal)
     }
 
     private func currencyTitle(for currency: Currency) -> String {
         currency.code == "USDC" ? "USDc" : currency.code
+    }
+
+    private var pickerSelectedCode: String {
+        switch viewModel.state.currencyPickerRow {
+        case .top:
+            return viewModel.state.topCurrency.code
+        case .bottom, .none:
+            return viewModel.state.bottomCurrency.code
+        }
+    }
+
+    private func freshnessText() -> String {
+        guard let updatedAt = viewModel.state.lastUpdatedAt else {
+            return viewModel.state.isRealtimeRates
+                ? L10n.Exchange.Status.updated
+                : L10n.Exchange.Status.lastUpdated
+        }
+
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        let relative = formatter.localizedString(for: updatedAt, relativeTo: Date())
+        let prefix = viewModel.state.isRealtimeRates
+            ? L10n.Exchange.Status.updated
+            : L10n.Exchange.Status.lastUpdated
+        return "\(prefix) \(relative)"
     }
 }
 

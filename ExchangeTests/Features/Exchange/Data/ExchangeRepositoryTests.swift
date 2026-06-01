@@ -24,10 +24,11 @@ struct ExchangeRepositoryTests {
         ])
         let sut = makeSUT(remote: remote, local: local)
 
-        let rates = try await sut.fetchRates(for: ["MXN"])
+        let snapshot = try await sut.fetchRates(for: ["MXN"])
 
-        #expect(rates.count == 1)
-        #expect(rates.first?.quoteCurrency.code == "MXN")
+        #expect(snapshot.rates.count == 1)
+        #expect(snapshot.rates.first?.quoteCurrency.code == "MXN")
+        #expect(snapshot.isRealtime == true)
         #expect(local.savedRates.count == 1)
     }
 
@@ -46,9 +47,10 @@ struct ExchangeRepositoryTests {
         ]
         let sut = makeSUT(remote: remote, local: local)
 
-        let rates = try await sut.fetchRates(for: ["MXN"])
+        let snapshot = try await sut.fetchRates(for: ["MXN"])
 
-        #expect(rates == local.cachedRates)
+        #expect(snapshot.rates == local.cachedRates)
+        #expect(snapshot.isRealtime == false)
     }
 
     @Test("fetchRates throws when remote fails and cache is empty")

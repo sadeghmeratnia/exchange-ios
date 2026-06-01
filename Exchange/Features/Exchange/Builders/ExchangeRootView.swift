@@ -10,21 +10,15 @@ import SwiftUI
 // MARK: - ExchangeRootView
 
 struct ExchangeRootView: View {
-    @StateObject private var coordinator: ExchangeCoordinator
+    private let coordinator: ExchangeCoordinator
 
     init(coordinator: ExchangeCoordinator) {
-        _coordinator = StateObject(wrappedValue: coordinator)
+        self.coordinator = coordinator
     }
 
     var body: some View {
-        NavigationStack(path: $coordinator.navigationPath) {
+        NavigationStack {
             coordinator.screenBuilder.makeExchangeListView()
-                .navigationDestination(for: ExchangeCoordinator.Destination.self) { destination in
-                    switch destination {
-                    case let .detail(currencyCode):
-                        coordinator.screenBuilder.makeExchangeDetailView(currencyCode: currencyCode)
-                    }
-                }
         }
     }
 }

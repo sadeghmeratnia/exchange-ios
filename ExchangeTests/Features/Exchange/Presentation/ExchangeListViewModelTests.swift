@@ -15,7 +15,12 @@ struct ExchangeListViewModelTests {
     @Test("screen appeared loads rates and currencies")
     func screenAppearedLoadsInitialData() async throws {
         let repository = MockExchangeRepository()
-        repository.fetchRatesHandler = { _ in [rate(quote: "MXN", ask: "18.41", bid: "18.39")] }
+        repository.fetchRatesHandler = { _ in
+            ExchangeRatesSnapshot(
+                rates: [rate(quote: "MXN", ask: "18.41", bid: "18.39")],
+                isRealtime: true,
+                updatedAt: Date(timeIntervalSince1970: 0))
+        }
         repository.fetchAvailableCurrenciesHandler = { [Currency(code: "MXN"), Currency(code: "ARS")] }
         let sut = makeSUT(repository: repository)
 
@@ -44,7 +49,7 @@ struct ExchangeListViewModelTests {
     func pickerOpenAndDismissTriggers() async {
         let sut = makeSUT(repository: MockExchangeRepository())
 
-        sut.onTrigger(.currencyTapped)
+        sut.onTrigger(.currencyTapped(row: .bottom))
         #expect(sut.state.isCurrencyPickerPresented == true)
 
         sut.onTrigger(.currencyPickerDismissed)
@@ -74,10 +79,16 @@ struct ExchangeListViewModelTests {
             let code = currencies.first ?? "MXN"
             if code == "MXN" {
                 try await Task.sleep(nanoseconds: 250_000_000)
-                return [rate(quote: "MXN", ask: "18.41", bid: "18.39")]
+                return ExchangeRatesSnapshot(
+                    rates: [rate(quote: "MXN", ask: "18.41", bid: "18.39")],
+                    isRealtime: true,
+                    updatedAt: Date(timeIntervalSince1970: 0))
             } else {
                 try await Task.sleep(nanoseconds: 20_000_000)
-                return [rate(quote: "ARS", ask: "1551", bid: "1539")]
+                return ExchangeRatesSnapshot(
+                    rates: [rate(quote: "ARS", ask: "1551", bid: "1539")],
+                    isRealtime: true,
+                    updatedAt: Date(timeIntervalSince1970: 0))
             }
         }
         let sut = makeSUT(repository: repository)
@@ -146,15 +157,18 @@ private extension ExchangeListViewModelTests {
 }
 
 private final class MockExchangeRepository: ExchangeRepositoryProtocol {
-    var fetchRatesHandler: (([String]) async throws -> [ExchangeRate])?
+    var fetchRatesHandler: (([String]) async throws -> ExchangeRatesSnapshot)?
     var fetchAvailableCurrenciesHandler: (() -> [Currency])?
     var cachedRates: [ExchangeRate] = []
 
-    func fetchRates(for currencies: [String]) async throws -> [ExchangeRate] {
+    func fetchRates(for currencies: [String]) async throws -> ExchangeRatesSnapshot {
         if let fetchRatesHandler {
             return try await fetchRatesHandler(currencies)
         }
-        return cachedRates
+        return ExchangeRatesSnapshot(
+            rates: cachedRates,
+            isRealtime: false,
+            updatedAt: cachedRates.map(\.timestamp).max())
     }
 
     func fetchAvailableCurrencies() async -> [Currency] {

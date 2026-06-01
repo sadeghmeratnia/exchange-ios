@@ -29,11 +29,16 @@ struct ExchangeListReducerTests {
 
         let output = sut.reduce(
             state: state,
-            action: .ratesLoaded(.success([rate(quote: "MXN", ask: "18.41", bid: "18.39")])))
+            action: .ratesLoaded(.success(
+                ExchangeRatesSnapshot(
+                    rates: [rate(quote: "MXN", ask: "18.41", bid: "18.39")],
+                    isRealtime: true,
+                    updatedAt: Date(timeIntervalSince1970: 0)))))
 
         #expect(output.state.phase == .loaded)
         #expect(output.state.rates.count == 1)
         #expect(output.state.bottomInputRaw == "36.80")
+        #expect(output.state.isRealtimeRates == true)
         #expect(output.effect == nil)
     }
 
@@ -92,12 +97,14 @@ struct ExchangeListReducerTests {
 
     @Test("open and close picker toggles picker presentation state")
     func pickerOpenClose() {
-        let opened = sut.reduce(state: .initial(), action: .openPicker)
+        let opened = sut.reduce(state: .initial(), action: .openPicker(row: .bottom))
         #expect(opened.state.isCurrencyPickerPresented == true)
+        #expect(opened.state.currencyPickerRow == .bottom)
         #expect(opened.effect == nil)
 
         let closed = sut.reduce(state: opened.state, action: .closePicker)
         #expect(closed.state.isCurrencyPickerPresented == false)
+        #expect(closed.state.currencyPickerRow == nil)
         #expect(closed.effect == nil)
     }
 
@@ -106,13 +113,33 @@ struct ExchangeListReducerTests {
         let state = ExchangeListState.initial().with(
             topInputRaw: "1",
             rates: [rate(quote: "ARS", ask: "1551", bid: "1539")],
-            isCurrencyPickerPresented: true)
+            isCurrencyPickerPresented: true,
+            currencyPickerRow: .some(.bottom))
 
         let output = sut.reduce(state: state, action: .applyCurrency("ARS"))
 
         #expect(output.state.bottomCurrency.code == "ARS")
         #expect(output.state.isCurrencyPickerPresented == false)
-        #expect(output.state.bottomInputRaw == "1545.00")
+        #expect(LocalizedNumberFormatting.parseDecimalInput(output.state.bottomInputRaw) == decimal("1545"))
+        #expect(output.effect == .fetchRates(currencies: ["ARS"]))
+    }
+
+    @Test("applyCurrency updates top currency when picker row is top")
+    func applyCurrencyUpdatesTopSelection() {
+        let state = ExchangeListState.initial().with(
+            topCurrency: Currency(code: "MXN"),
+            bottomCurrency: Currency(code: "USDC"),
+            bottomInputRaw: "10",
+            activeInput: .bottom,
+            rates: [rate(quote: "MXN", ask: "18.41", bid: "18.39")],
+            isCurrencyPickerPresented: true,
+            currencyPickerRow: .some(.top))
+
+        let output = sut.reduce(state: state, action: .applyCurrency("ARS"))
+
+        #expect(output.state.topCurrency.code == "ARS")
+        #expect(output.state.isCurrencyPickerPresented == false)
+        #expect(output.state.currencyPickerRow == nil)
         #expect(output.effect == .fetchRates(currencies: ["ARS"]))
     }
 

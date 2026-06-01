@@ -31,7 +31,9 @@ enum ExchangePreviewFixtures {
         topInputRaw: "9,999",
         bottomInputRaw: "184,065.59",
         availableCurrencies: currencies,
-        rates: rates)
+        rates: rates,
+        isRealtimeRates: false,
+        lastUpdatedAt: .some(previewDate))
 
     static let exchangeListLoading: ExchangeListState = .initial().with(
         phase: .loading(.initial),
@@ -53,8 +55,6 @@ enum ExchangePreviewFixtures {
         currencies: [],
         selectedCurrencyCode: "MXN",
         isLoading: true)
-
-    static let exchangeDetail = ExchangeDetailState.initial(currencyCode: "MXN")
 }
 
 private extension ExchangePreviewFixtures {

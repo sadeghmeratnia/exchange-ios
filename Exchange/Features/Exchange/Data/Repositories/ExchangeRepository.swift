@@ -22,7 +22,7 @@ struct ExchangeRepository: ExchangeRepositoryProtocol {
         self.seedFallbackCodes = fallbackCodes
     }
 
-    func fetchRates(for currencies: [String]) async throws -> [ExchangeRate] {
+    func fetchRates(for currencies: [String]) async throws -> ExchangeRatesSnapshot {
         do {
             let tickerDTOs = try await remoteDataSource.fetchTickers(currencies: currencies)
             let mappedRates = ExchangeTickerMapper.map(tickerDTOs)
@@ -30,13 +30,19 @@ struct ExchangeRepository: ExchangeRepositoryProtocol {
                 throw ExchangeDomainError.invalidRemoteData
             }
             localCacheDataSource.saveRates(mappedRates)
-            return mappedRates
+            return ExchangeRatesSnapshot(
+                rates: mappedRates,
+                isRealtime: true,
+                updatedAt: mappedRates.map(\.timestamp).max())
         } catch {
             let cachedRates = localCacheDataSource.getCachedRates()
             guard cachedRates.isEmpty == false else {
                 throw ExchangeDomainError.ratesUnavailable
             }
-            return cachedRates
+            return ExchangeRatesSnapshot(
+                rates: cachedRates,
+                isRealtime: false,
+                updatedAt: localCacheDataSource.getLastSuccessfulUpdate() ?? cachedRates.map(\.timestamp).max())
         }
     }
 

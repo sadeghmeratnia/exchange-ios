@@ -23,6 +23,7 @@ final class ExchangeLocalCacheDataSource: ExchangeLocalCacheDataSourceProtocol {
     private enum Keys {
         static let lastSuccessfulRateUpdate = "exchange.lastSuccessfulRateUpdate"
         static let cachedCurrencyCodes = "exchange.cachedCurrencyCodes"
+        static let cachedRates = "exchange.cachedRates"
     }
 
     private var inMemoryRates: [ExchangeRate] = []
@@ -30,6 +31,7 @@ final class ExchangeLocalCacheDataSource: ExchangeLocalCacheDataSourceProtocol {
 
     init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults
+        self.inMemoryRates = Self.loadRates(from: userDefaults)
     }
 
     func getCachedRates() -> [ExchangeRate] {
@@ -40,6 +42,7 @@ final class ExchangeLocalCacheDataSource: ExchangeLocalCacheDataSourceProtocol {
         inMemoryRates = rates
         let latestTimestamp = rates.map(\.timestamp).max()
         userDefaults.set(latestTimestamp, forKey: Keys.lastSuccessfulRateUpdate)
+        userDefaults.set(Self.encodeRates(rates), forKey: Keys.cachedRates)
     }
 
     func getLastSuccessfulUpdate() -> Date? {
@@ -53,5 +56,19 @@ final class ExchangeLocalCacheDataSource: ExchangeLocalCacheDataSourceProtocol {
     func saveCurrencyCodes(_ codes: [String]) {
         let normalizedCodes = Array(Set(codes.map { $0.uppercased() })).sorted()
         userDefaults.set(normalizedCodes, forKey: Keys.cachedCurrencyCodes)
+    }
+}
+
+private extension ExchangeLocalCacheDataSource {
+    static func encodeRates(_ rates: [ExchangeRate]) -> Data? {
+        try? JSONEncoder().encode(rates)
+    }
+
+    static func loadRates(from userDefaults: UserDefaults) -> [ExchangeRate] {
+        guard let data = userDefaults.data(forKey: Keys.cachedRates),
+              let rates = try? JSONDecoder().decode([ExchangeRate].self, from: data) else {
+            return []
+        }
+        return rates
     }
 }

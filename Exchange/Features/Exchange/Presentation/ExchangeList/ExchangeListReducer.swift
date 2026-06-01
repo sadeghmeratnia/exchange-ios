@@ -19,8 +19,13 @@ struct ExchangeListReducer {
             let nextState = state.startingInitialLoad()
             return (nextState, .fetchRates(currencies: requestedCurrencyCodes(from: nextState)))
 
-        case let .ratesLoaded(.success(rates)):
-            let loadedState = state.with(phase: .loaded, rates: rates, errorMessage: .some(nil))
+        case let .ratesLoaded(.success(snapshot)):
+            let loadedState = state.with(
+                phase: .loaded,
+                rates: snapshot.rates,
+                isRealtimeRates: snapshot.isRealtime,
+                lastUpdatedAt: .some(snapshot.updatedAt),
+                errorMessage: .some(nil))
             let nextState = recalculateOppositeAmount(from: loadedState)
             return (nextState, nil)
 
@@ -52,18 +57,20 @@ struct ExchangeListReducer {
             let nextState = recalculateOppositeAmount(from: swappedState)
             return (nextState, .fetchRates(currencies: requestedCurrencyCodes(from: nextState)))
 
-        case .openPicker:
-            let nextState = state.with(isCurrencyPickerPresented: true)
+        case let .openPicker(row):
+            let nextState = state.with(
+                isCurrencyPickerPresented: true,
+                currencyPickerRow: .some(row))
             return (nextState, nil)
 
         case .closePicker:
-            let nextState = state.with(isCurrencyPickerPresented: false)
+            let nextState = state.with(
+                isCurrencyPickerPresented: false,
+                currencyPickerRow: .some(nil))
             return (nextState, nil)
 
         case let .applyCurrency(code):
-            let selectedState = state.with(
-                bottomCurrency: Currency(code: code),
-                isCurrencyPickerPresented: false)
+            let selectedState = state.withCurrencySelection(code: code)
             let nextState = recalculateOppositeAmount(from: selectedState)
             return (nextState, .fetchRates(currencies: requestedCurrencyCodes(from: nextState)))
 
@@ -114,18 +121,26 @@ private extension ExchangeListReducer {
     }
 
     func decimal(from rawValue: String) -> Decimal? {
-        let cleaned = rawValue.replacingOccurrences(of: ",", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard cleaned.isEmpty == false else { return nil }
-        return Decimal(string: cleaned, locale: Locale(identifier: "en_US_POSIX"))
+        LocalizedNumberFormatting.parseDecimalInput(rawValue)
     }
 
     func format(decimal: Decimal) -> String {
-        let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 6
-        return formatter.string(from: decimal as NSDecimalNumber) ?? "\(decimal)"
+        LocalizedNumberFormatting.formatAmount(decimal)
+    }
+}
+
+private extension ExchangeListState {
+    func withCurrencySelection(code: String) -> ExchangeListState {
+        let selectedCurrency = Currency(code: code)
+        let nextState: ExchangeListState
+        switch currencyPickerRow {
+        case .top:
+            nextState = with(topCurrency: selectedCurrency)
+        case .bottom, .none:
+            nextState = with(bottomCurrency: selectedCurrency)
+        }
+        return nextState.with(
+            isCurrencyPickerPresented: false,
+            currencyPickerRow: .some(nil))
     }
 }
