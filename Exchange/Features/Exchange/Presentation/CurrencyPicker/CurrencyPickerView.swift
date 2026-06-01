@@ -72,7 +72,7 @@ struct CurrencyPickerView<VM: ViewModelProtocol>: View where VM.State == Currenc
         } else {
             Image(systemName: display.fallbackSymbolName ?? "globe")
                 .foregroundStyle(.secondary)
-                .accessibilityLabel("Currency")
+                .accessibilityLabel(L10n.Exchange.Accessibility.currency)
         }
     }
 }

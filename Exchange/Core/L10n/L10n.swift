@@ -25,6 +25,12 @@ enum L10n {
             }
         }
 
+        enum Accessibility {
+            static var currency: String {
+                tr(.exchangeAccessibilityCurrency)
+            }
+        }
+
         enum Status {
             static var live: String {
                 tr(.exchangeStatusLive)
@@ -48,6 +54,7 @@ enum L10n {
         case exchangeCalculatorTitle = "exchange.calculator.title"
         case exchangeActionRetry = "exchange.action.retry"
         case exchangeCurrencyPickerTitle = "exchange.currencyPicker.title"
+        case exchangeAccessibilityCurrency = "exchange.accessibility.currency"
         case exchangeStatusLive = "exchange.status.live"
         case exchangeStatusNotRealtime = "exchange.status.notRealtime"
         case exchangeStatusUpdated = "exchange.status.updated"

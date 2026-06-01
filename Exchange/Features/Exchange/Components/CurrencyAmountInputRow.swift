@@ -71,7 +71,7 @@ struct CurrencyAmountInputRow: View {
         } else {
             Image(systemName: display.fallbackSymbolName ?? "globe")
                 .font(.subheadline)
-                .accessibilityLabel("Currency")
+                .accessibilityLabel(L10n.Exchange.Accessibility.currency)
         }
     }
 }
