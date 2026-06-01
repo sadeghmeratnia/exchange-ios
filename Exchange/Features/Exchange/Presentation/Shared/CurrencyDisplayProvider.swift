@@ -38,7 +38,7 @@ struct CurrencyDisplayProvider: CurrencyDisplayProviding {
 }
 
 private extension CurrencyDisplayProvider {
-    static let inferredRepresentativeRegions: [String: String] = {
+    static let inferredCurrencyRegions: [String: Set<String>] = {
         var regionsByCurrency: [String: Set<String>] = [:]
         for identifier in Locale.availableIdentifiers {
             let locale = Locale(identifier: identifier)
@@ -49,22 +49,18 @@ private extension CurrencyDisplayProvider {
             }
             regionsByCurrency[currencyCode, default: []].insert(regionCode)
         }
-
-        return regionsByCurrency.compactMapValues { regions in
-            let sortedRegions = regions.sorted()
-            if let currentRegion = Locale.current.region?.identifier.uppercased(),
-               sortedRegions.contains(currentRegion) {
-                return currentRegion
-            }
-            return sortedRegions.first
-        }
+        return regionsByCurrency
     }()
 
     static func representativeRegion(for currencyCode: String) -> String? {
         if currencyCode == "USDC" {
             return "US"
         }
-        return inferredRepresentativeRegions[currencyCode]
+        guard let regions = inferredCurrencyRegions[currencyCode],
+              regions.count == 1 else {
+            return nil
+        }
+        return regions.first
     }
 
     static func flagEmoji(from countryCode: String?) -> String? {

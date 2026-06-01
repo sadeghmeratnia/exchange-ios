@@ -40,4 +40,14 @@ struct CurrencyDisplayProviderTests {
         #expect(display.flagEmoji == nil)
         #expect(display.fallbackSymbolName == "globe")
     }
+
+    @Test("ambiguous currencies fallback to neutral icon")
+    func ambiguousCurrencyFallback() {
+        let display = CurrencyDisplayProvider.display(for: "USD")
+
+        #expect(display.code == "USD")
+        #expect(display.title == "USD")
+        #expect(display.flagEmoji == nil)
+        #expect(display.fallbackSymbolName == "globe")
+    }
 }
