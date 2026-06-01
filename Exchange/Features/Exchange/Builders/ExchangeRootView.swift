@@ -18,9 +18,7 @@ struct ExchangeRootView: View {
 
     var body: some View {
         NavigationStack(path: $coordinator.navigationPath) {
-            coordinator.screenBuilder.makeExchangeListView { selectedCurrencyCode in
-                coordinator.showDetail(currencyCode: selectedCurrencyCode)
-            }
+            coordinator.screenBuilder.makeExchangeListView()
                 .navigationDestination(for: ExchangeCoordinator.Destination.self) { destination in
                     switch destination {
                     case let .detail(currencyCode):

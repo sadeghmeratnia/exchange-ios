@@ -13,6 +13,12 @@ enum L10n {
             tr(.exchangeCalculatorTitle)
         }
 
+        enum Action {
+            static var retry: String {
+                tr(.exchangeActionRetry)
+            }
+        }
+
         enum CurrencyPicker {
             static var title: String {
                 tr(.exchangeCurrencyPickerTitle)
@@ -40,6 +46,7 @@ enum L10n {
 
     private enum Key: String.LocalizationValue {
         case exchangeCalculatorTitle = "exchange.calculator.title"
+        case exchangeActionRetry = "exchange.action.retry"
         case exchangeCurrencyPickerTitle = "exchange.currencyPicker.title"
         case exchangeStatusLive = "exchange.status.live"
         case exchangeStatusNotRealtime = "exchange.status.notRealtime"
@@ -48,6 +55,6 @@ enum L10n {
     }
 
     private static func tr(_ key: Key) -> String {
-        return String(localized: key.rawValue)
+        String(localized: key.rawValue)
     }
 }

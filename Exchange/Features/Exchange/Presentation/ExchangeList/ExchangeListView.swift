@@ -11,22 +11,15 @@ import SwiftUI
 
 struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeListState, VM.Trigger == ExchangeListTrigger {
     @ObservedObject private var viewModel: VM
-    private let onItemSelected: (String) -> Void
 
-    init(viewModel: VM,
-         onItemSelected: @escaping (String) -> Void = { _ in }) {
+    init(viewModel: VM) {
         self.viewModel = viewModel
-        self.onItemSelected = onItemSelected
     }
 
     var body: some View {
         VStack(spacing: UIConstants.Spacing.xl) {
             header
             amountCard
-            Button("Open \(viewModel.state.bottomCurrency.code) details") {
-                onItemSelected(viewModel.state.bottomCurrency.code)
-            }
-            .buttonStyle(.bordered)
             phaseView
             Spacer()
         }
@@ -122,7 +115,7 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
                 Text(message)
                     .font(.footnote)
                     .foregroundStyle(.red)
-                Button("Retry") {
+                Button(L10n.Exchange.Action.retry) {
                     viewModel.onTrigger(.retryTapped)
                 }
                 .buttonStyle(.bordered)

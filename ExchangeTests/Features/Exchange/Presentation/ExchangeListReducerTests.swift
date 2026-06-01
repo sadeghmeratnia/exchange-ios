@@ -145,6 +145,27 @@ struct ExchangeListReducerTests {
         #expect(output.state.errorMessage == nil)
         #expect(output.effect == nil)
     }
+
+    @Test("invalid top input clears bottom value")
+    func invalidTopInputClearsBottom() {
+        let state = ExchangeListState.initial().with(
+            bottomInputRaw: "100.00",
+            rates: [rate(quote: "MXN", ask: "18.41", bid: "18.39")])
+
+        let output = sut.reduce(state: state, action: .setTopInput("abc"))
+
+        #expect(output.state.topInputRaw == "abc")
+        #expect(output.state.bottomInputRaw == "")
+        #expect(output.effect == nil)
+    }
+
+    @Test("currency apply on USDC does not request any non-USDC rate")
+    func applyCurrencyToUSDCRequestsNoRate() {
+        let output = sut.reduce(state: .initial(), action: .applyCurrency("USDC"))
+
+        #expect(output.state.bottomCurrency.code == "USDC")
+        #expect(output.effect == .fetchRates(currencies: []))
+    }
 }
 
 private extension ExchangeListReducerTests {

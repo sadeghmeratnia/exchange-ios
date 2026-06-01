@@ -89,6 +89,31 @@ struct ExchangeListViewModelTests {
         #expect(sut.state.bottomCurrency.code == "ARS")
         #expect(sut.state.rates.first?.quoteCurrency.code == "ARS")
     }
+
+    @Test("dismiss error trigger clears error message")
+    func dismissErrorClearsErrorMessage() async {
+        let repository = MockExchangeRepository()
+        let initialState = ExchangeListState.initial().with(errorMessage: .some("boom"))
+        let sut = makeSUT(repository: repository, initialState: initialState)
+
+        sut.onTrigger(.dismissError)
+
+        #expect(sut.state.errorMessage == nil)
+    }
+
+    @Test("screen appeared can load from repository fallback rates")
+    func screenAppearedLoadsFallbackRates() async throws {
+        let repository = MockExchangeRepository()
+        repository.cachedRates = [rate(quote: "MXN", ask: "18.41", bid: "18.39")]
+        repository.fetchAvailableCurrenciesHandler = { [Currency(code: "MXN")] }
+        let sut = makeSUT(repository: repository)
+
+        sut.onTrigger(.screenAppeared)
+        try await Task.sleep(nanoseconds: 80_000_000)
+
+        #expect(sut.state.phase == .loaded)
+        #expect(sut.state.rates == repository.cachedRates)
+    }
 }
 
 private extension ExchangeListViewModelTests {
@@ -129,7 +154,7 @@ private final class MockExchangeRepository: ExchangeRepositoryProtocol {
         if let fetchRatesHandler {
             return try await fetchRatesHandler(currencies)
         }
-        return []
+        return cachedRates
     }
 
     func fetchAvailableCurrencies() async -> [Currency] {

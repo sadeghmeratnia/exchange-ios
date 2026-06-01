@@ -17,10 +17,8 @@ final class ExchangeScreenBuilder {
         self.exchangeListViewModel = exchangeListViewModel
     }
 
-    func makeExchangeListView(onItemSelected: @escaping (String) -> Void) -> DefaultExchangeListView {
-        DefaultExchangeListView(
-            viewModel: exchangeListViewModel,
-            onItemSelected: onItemSelected)
+    func makeExchangeListView() -> DefaultExchangeListView {
+        DefaultExchangeListView(viewModel: exchangeListViewModel)
     }
 
     func makeExchangeDetailView(currencyCode: String) -> DefaultExchangeDetailView {
