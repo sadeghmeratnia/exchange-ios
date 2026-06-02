@@ -48,7 +48,7 @@ struct ExchangeListViewModelTests {
     @Test("rates failure sets error phase")
     func ratesFailureSetsError() async throws {
         let repository = MockExchangeRepository()
-        repository.fetchRatesHandler = { _ in throw TestError.sample }
+        repository.fetchRatesHandler = { _ in throw ExchangeDomainError.ratesUnavailable }
         let sut = makeSUT(repository: repository)
 
         sut.onTrigger(.screenAppeared)

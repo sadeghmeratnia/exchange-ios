@@ -18,6 +18,9 @@ enum ExchangeCurrencyRow: String, Equatable, Hashable, Identifiable {
 
 enum ExchangeListTrigger: Equatable {
     case screenAppeared
+    case screenDisappeared
+    case appBecameActive
+    case appMovedToBackground
     case topAmountChanged(String)
     case bottomAmountChanged(String)
     case swapTapped

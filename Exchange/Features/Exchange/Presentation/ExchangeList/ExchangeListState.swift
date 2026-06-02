@@ -38,20 +38,23 @@ struct ExchangeListState: Equatable {
     var isRealtimeRates: Bool
     var lastUpdatedAt: Date?
     var errorMessage: String?
+    /// Conversion rate for 1 unit of `topCurrency` in `bottomCurrency` terms; derived from rates.
+    var unitQuoteRate: Decimal?
 
     static func initial() -> ExchangeListState {
         ExchangeListState(
             phase: .idle,
             topCurrency: Currency(code: "USDC"),
             bottomCurrency: Currency(code: "MXN"),
-            topInputRaw: "",
+            topInputRaw: "1",
             bottomInputRaw: "",
             activeInput: .top,
             availableCurrencies: [],
             rates: [],
             isRealtimeRates: true,
             lastUpdatedAt: nil,
-            errorMessage: nil)
+            errorMessage: nil,
+            unitQuoteRate: nil)
     }
 }
 
@@ -68,7 +71,8 @@ extension ExchangeListState {
               rates: [ExchangeRate]? = nil,
               isRealtimeRates: Bool? = nil,
               lastUpdatedAt: Date?? = nil,
-              errorMessage: String?? = nil) -> ExchangeListState {
+              errorMessage: String?? = nil,
+              unitQuoteRate: Decimal?? = nil) -> ExchangeListState {
         ExchangeListState(
             phase: phase ?? self.phase,
             topCurrency: topCurrency ?? self.topCurrency,
@@ -80,7 +84,8 @@ extension ExchangeListState {
             rates: rates ?? self.rates,
             isRealtimeRates: isRealtimeRates ?? self.isRealtimeRates,
             lastUpdatedAt: lastUpdatedAt ?? self.lastUpdatedAt,
-            errorMessage: errorMessage ?? self.errorMessage)
+            errorMessage: errorMessage ?? self.errorMessage,
+            unitQuoteRate: unitQuoteRate ?? self.unitQuoteRate)
     }
 
     func startingInitialLoad() -> ExchangeListState {
@@ -91,15 +96,8 @@ extension ExchangeListState {
         with(phase: .loading(.refresh), errorMessage: .some(nil))
     }
 
-    func applyingLoadSuccess(rates: [ExchangeRate], availableCurrencies: [Currency]) -> ExchangeListState {
-        with(
-            phase: .loaded,
-            availableCurrencies: availableCurrencies,
-            rates: rates,
-            errorMessage: .some(nil))
-    }
-
-    func applyingLoadFailure(message: String) -> ExchangeListState {
-        with(phase: .error(message: message), errorMessage: .some(message))
+    func applyingLoadFailure(error: ExchangeDomainError) -> ExchangeListState {
+        let message = error.errorDescription ?? L10n.Exchange.Error.ratesUnavailable
+        return with(phase: .error(message: message), errorMessage: .some(message))
     }
 }

@@ -13,7 +13,7 @@ struct ExchangeApp: App {
     private let appContainer: AppContainer
 
     init() {
-        let logger = OSNetworkLogger()
+        let logger = OSLogger(category: .network)
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         decoder.dateDecodingStrategy = .iso8601

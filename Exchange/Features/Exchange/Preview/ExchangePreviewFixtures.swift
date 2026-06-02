@@ -33,7 +33,8 @@ enum ExchangePreviewFixtures {
         availableCurrencies: currencies,
         rates: rates,
         isRealtimeRates: false,
-        lastUpdatedAt: .some(previewDate))
+        lastUpdatedAt: .some(previewDate),
+        unitQuoteRate: .some(Decimal(18.40)))
 
     static let exchangeListLoading: ExchangeListState = .initial().with(
         phase: .loading(.initial),

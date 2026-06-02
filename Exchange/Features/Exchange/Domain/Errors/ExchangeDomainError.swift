@@ -9,7 +9,16 @@ import Foundation
 
 // MARK: - ExchangeDomainError
 
-enum ExchangeDomainError: Error, Sendable {
+enum ExchangeDomainError: Error, Sendable, Equatable, LocalizedError {
     case invalidRemoteData
     case ratesUnavailable
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidRemoteData:
+            L10n.Exchange.Error.invalidRemoteData
+        case .ratesUnavailable:
+            L10n.Exchange.Error.ratesUnavailable
+        }
+    }
 }

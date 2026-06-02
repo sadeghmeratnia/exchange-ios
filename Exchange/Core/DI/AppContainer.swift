@@ -19,7 +19,7 @@ final class AppContainer {
 
     #if DEBUG
         static func preview() -> AppContainer {
-            let logger = OSNetworkLogger()
+            let logger = OSLogger(category: .network)
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             decoder.dateDecodingStrategy = .iso8601

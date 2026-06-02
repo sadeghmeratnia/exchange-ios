@@ -11,6 +11,7 @@ import SwiftUI
 
 struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeListState, VM.Trigger == ExchangeListTrigger {
     @ObservedObject private var viewModel: VM
+    @Environment(\.scenePhase) private var scenePhase
     @State private var presentedCurrencyRow: ExchangeCurrencyRow?
     private let currencyDisplayProvider: any CurrencyDisplayProviding
 
@@ -32,6 +33,16 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
         .onAppear {
             viewModel.onTrigger(.screenAppeared)
         }
+        .onDisappear {
+            viewModel.onTrigger(.screenDisappeared)
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                viewModel.onTrigger(.appBecameActive)
+            } else if newPhase == .inactive || newPhase == .background {
+                viewModel.onTrigger(.appMovedToBackground)
+            }
+        }
         .sheet(item: $presentedCurrencyRow) { row in
             currencyPickerSheet(for: row)
                 .presentationDetents([.fraction(0.52)])
@@ -43,7 +54,11 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
         VStack(alignment: .leading, spacing: UIConstants.Spacing.xs) {
             Text(L10n.Exchange.calculatorTitle)
                 .font(.title3.weight(.semibold))
-            RateStatusBanner(text: rateSubtitle, isRealtime: viewModel.state.isRealtimeRates)
+            RateStatusBanner(
+                text: ExchangeListStatusSubtitleBuilder.subtitle(
+                    for: viewModel.state,
+                    currencyDisplayProvider: currencyDisplayProvider),
+                isRealtime: viewModel.state.isRealtimeRates)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -55,6 +70,7 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
                     currencyCode: viewModel.state.topCurrency.code,
                     amountText: viewModel.state.topInputRaw,
                     isSelectableCurrency: viewModel.state.topCurrency.isUSDc == false,
+                    autoFocusOnAppear: true,
                     onCurrencyTap: {
                         presentedCurrencyRow = .top
                     },
@@ -126,32 +142,6 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
         }
     }
 
-    private var rateSubtitle: String {
-        let statusPrefix = viewModel.state.isRealtimeRates
-            ? L10n.Exchange.Status.live
-            : L10n.Exchange.Status.notRealtime
-        let updateText = freshnessText()
-        let oneUnit = Decimal(integerLiteral: 1)
-        let convertedRate = ConvertAmountUseCase().execute(
-            amount: oneUnit,
-            from: viewModel.state.topCurrency,
-            to: viewModel.state.bottomCurrency,
-            rates: viewModel.state.rates)
-
-        guard let convertedRate else {
-            return "\(statusPrefix) • \(updateText) • 1 \(currencyTitle(for: viewModel.state.topCurrency)) = -- \(viewModel.state.bottomCurrency.code)"
-        }
-        return "\(statusPrefix) • \(updateText) • 1 \(currencyTitle(for: viewModel.state.topCurrency)) = \(format(decimal: convertedRate)) \(viewModel.state.bottomCurrency.code)"
-    }
-
-    private func format(decimal: Decimal) -> String {
-        LocalizedNumberFormatting.formatRate(decimal)
-    }
-
-    private func currencyTitle(for currency: Currency) -> String {
-        currencyDisplayProvider.display(for: currency.code).title
-    }
-
     private func pickerSelectedCode(for row: ExchangeCurrencyRow) -> String {
         switch row {
         case .top:
@@ -159,22 +149,6 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
         case .bottom:
             return viewModel.state.bottomCurrency.code
         }
-    }
-
-    private func freshnessText() -> String {
-        guard let updatedAt = viewModel.state.lastUpdatedAt else {
-            return viewModel.state.isRealtimeRates
-                ? L10n.Exchange.Status.updated
-                : L10n.Exchange.Status.lastUpdated
-        }
-
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .short
-        let relative = formatter.localizedString(for: updatedAt, relativeTo: Date())
-        let prefix = viewModel.state.isRealtimeRates
-            ? L10n.Exchange.Status.updated
-            : L10n.Exchange.Status.lastUpdated
-        return "\(prefix) \(relative)"
     }
 }
 

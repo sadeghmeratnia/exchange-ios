@@ -11,7 +11,8 @@ import Foundation
 
 enum ExchangeListAction {
     case startLoad
-    case ratesLoaded(Result<ExchangeRatesSnapshot, Error>)
+    case refreshIfNeeded
+    case ratesLoaded(Result<ExchangeRatesSnapshot, ExchangeDomainError>)
     case currenciesLoaded([Currency])
     case setTopInput(String)
     case setBottomInput(String)

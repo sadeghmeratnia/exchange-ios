@@ -31,6 +31,16 @@ enum L10n {
             }
         }
 
+        enum Error {
+            static var invalidRemoteData: String {
+                tr(.exchangeErrorInvalidRemoteData)
+            }
+
+            static var ratesUnavailable: String {
+                tr(.exchangeErrorRatesUnavailable)
+            }
+        }
+
         enum Status {
             static var live: String {
                 tr(.exchangeStatusLive)
@@ -52,6 +62,8 @@ enum L10n {
 
     private enum Key: String.LocalizationValue {
         case exchangeCalculatorTitle = "exchange.calculator.title"
+        case exchangeErrorInvalidRemoteData = "exchange.error.invalidRemoteData"
+        case exchangeErrorRatesUnavailable = "exchange.error.ratesUnavailable"
         case exchangeActionRetry = "exchange.action.retry"
         case exchangeCurrencyPickerTitle = "exchange.currencyPicker.title"
         case exchangeAccessibilityCurrency = "exchange.accessibility.currency"

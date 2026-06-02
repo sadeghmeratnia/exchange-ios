@@ -13,19 +13,24 @@ struct CurrencyAmountInputRow: View {
     let currencyCode: String
     let amountText: String
     let isSelectableCurrency: Bool
+    let autoFocusOnAppear: Bool
     let onCurrencyTap: () -> Void
     let onAmountChanged: (String) -> Void
     private let currencyDisplayProvider: any CurrencyDisplayProviding
+    @FocusState private var isAmountFieldFocused: Bool
+    @State private var didAutoFocus = false
 
     init(currencyCode: String,
          amountText: String,
          isSelectableCurrency: Bool,
+         autoFocusOnAppear: Bool = false,
          onCurrencyTap: @escaping () -> Void,
          onAmountChanged: @escaping (String) -> Void,
          currencyDisplayProvider: any CurrencyDisplayProviding = CurrencyDisplayProvider()) {
         self.currencyCode = currencyCode
         self.amountText = amountText
         self.isSelectableCurrency = isSelectableCurrency
+        self.autoFocusOnAppear = autoFocusOnAppear
         self.onCurrencyTap = onCurrencyTap
         self.onAmountChanged = onAmountChanged
         self.currencyDisplayProvider = currencyDisplayProvider
@@ -59,10 +64,18 @@ struct CurrencyAmountInputRow: View {
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.trailing)
                 .frame(maxWidth: 150)
+                .focused($isAmountFieldFocused)
                 .accessibilityLabel("Amount in \(display.title)")
         }
         .padding(.horizontal, UIConstants.Spacing.md)
         .padding(.vertical, UIConstants.Spacing.lg)
+        .onAppear {
+            guard autoFocusOnAppear, didAutoFocus == false else { return }
+            didAutoFocus = true
+            DispatchQueue.main.async {
+                isAmountFieldFocused = true
+            }
+        }
     }
 
     @ViewBuilder

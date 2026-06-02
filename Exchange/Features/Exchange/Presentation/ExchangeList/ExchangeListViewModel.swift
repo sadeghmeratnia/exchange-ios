@@ -17,6 +17,9 @@ final class ExchangeListViewModel: ExchangeListViewModelProtocol {
     private let reducer: ExchangeListReducer
     private let getExchangeRatesUseCase: GetExchangeRatesUseCase
     private let getAvailableCurrenciesUseCase: GetAvailableCurrenciesUseCase
+    private var periodicRefreshIntervalNanoseconds: UInt64 {
+        UInt64(ExchangeListRefreshPolicy.ratesRefreshInterval * 1_000_000_000)
+    }
 
     private var effectTasks: [EffectTaskKind: Task<Void, Never>] = [:]
 
@@ -40,6 +43,17 @@ final class ExchangeListViewModel: ExchangeListViewModelProtocol {
         switch trigger {
         case .screenAppeared:
             send(.startLoad)
+            startPeriodicRefreshIfNeeded()
+
+        case .screenDisappeared:
+            stopPeriodicRefresh()
+
+        case .appBecameActive:
+            startPeriodicRefreshIfNeeded()
+            send(.refreshIfNeeded)
+
+        case .appMovedToBackground:
+            stopPeriodicRefresh()
 
         case let .topAmountChanged(value):
             send(.setTopInput(value))
@@ -82,7 +96,7 @@ final class ExchangeListViewModel: ExchangeListViewModelProtocol {
                 return
             } catch {
                 guard Task.isCancelled == false else { return }
-                send(.ratesLoaded(.failure(error)))
+                send(.ratesLoaded(.failure(mapRatesError(error))))
             }
 
             let currencies = await availableCurrencies
@@ -98,9 +112,16 @@ final class ExchangeListViewModel: ExchangeListViewModelProtocol {
                 return
             } catch {
                 guard Task.isCancelled == false else { return }
-                send(.ratesLoaded(.failure(error)))
+                send(.ratesLoaded(.failure(mapRatesError(error))))
             }
         }
+    }
+
+    private func mapRatesError(_ error: Error) -> ExchangeDomainError {
+        if let domainError = error as? ExchangeDomainError {
+            return domainError
+        }
+        return .ratesUnavailable
     }
 }
 
@@ -109,6 +130,7 @@ final class ExchangeListViewModel: ExchangeListViewModelProtocol {
 private extension ExchangeListViewModel {
     enum EffectTaskKind: Hashable {
         case rates
+        case periodicRefresh
     }
 
     func start(effect: ExchangeListEffect) {
@@ -132,5 +154,28 @@ private extension ExchangeListViewModel {
 
     func clearTask(for kind: EffectTaskKind) {
         effectTasks[kind] = nil
+    }
+
+    func startPeriodicRefreshIfNeeded() {
+        guard effectTasks[.periodicRefresh] == nil else { return }
+
+        effectTasks[.periodicRefresh] = Task { [weak self] in
+            guard let self else { return }
+            while Task.isCancelled == false {
+                do {
+                    try await Task.sleep(nanoseconds: periodicRefreshIntervalNanoseconds)
+                } catch {
+                    return
+                }
+
+                guard Task.isCancelled == false else { return }
+                self.send(.refreshIfNeeded)
+            }
+        }
+    }
+
+    func stopPeriodicRefresh() {
+        effectTasks[.periodicRefresh]?.cancel()
+        effectTasks[.periodicRefresh] = nil
     }
 }

@@ -29,19 +29,23 @@ actor ExchangeLocalCacheDataSource: ExchangeLocalCacheDataSourceProtocol {
     private let userDefaults: UserDefaults
     private let fileManager: FileManager
     private let ratesFileURL: URL
+    private let logger: NetworkLogger
 
     init(
         userDefaults: UserDefaults = .standard,
         fileManager: FileManager = .default,
-        cacheDirectoryURL: URL? = nil
+        cacheDirectoryURL: URL? = nil,
+        logger: NetworkLogger = OSLogger(category: .cache)
     ) {
         self.userDefaults = userDefaults
         self.fileManager = fileManager
+        self.logger = logger
         self.ratesFileURL = Self.makeRatesFileURL(
             fileManager: fileManager,
             cacheDirectoryURL: cacheDirectoryURL
         )
-        self.inMemoryRates = Self.loadRates(from: ratesFileURL)
+        let loadedRates = Self.loadRates(from: ratesFileURL, logger: logger)
+        self.inMemoryRates = loadedRates
     }
 
     func getCachedRates() async -> [ExchangeRate] {
@@ -50,9 +54,13 @@ actor ExchangeLocalCacheDataSource: ExchangeLocalCacheDataSourceProtocol {
 
     func saveRates(_ rates: [ExchangeRate]) async {
         inMemoryRates = rates
-        persistRates(rates)
-        let latestTimestamp = rates.map(\.timestamp).max()
-        userDefaults.set(latestTimestamp, forKey: Keys.lastSuccessfulRateUpdate)
+        switch persistRates(rates) {
+        case .success:
+            let latestTimestamp = rates.map(\.timestamp).max()
+            userDefaults.set(latestTimestamp, forKey: Keys.lastSuccessfulRateUpdate)
+        case let .failure(error):
+            logger.log("Failed to persist exchange rates: \(error)", level: .warning)
+        }
     }
 
     func getLastSuccessfulUpdate() async -> Date? {
@@ -69,20 +77,54 @@ actor ExchangeLocalCacheDataSource: ExchangeLocalCacheDataSourceProtocol {
     }
 }
 
+private enum ExchangeCachePersistenceError: Error {
+    case encodingFailed
+    case directoryCreationFailed(underlying: Error)
+    case writeFailed(underlying: Error)
+    case decodeFailed(underlying: Error)
+    case readFailed(underlying: Error)
+}
+
 private extension ExchangeLocalCacheDataSource {
-    func persistRates(_ rates: [ExchangeRate]) {
-        guard let data = try? JSONEncoder().encode(rates) else { return }
+    func persistRates(_ rates: [ExchangeRate]) -> Result<Void, ExchangeCachePersistenceError> {
+        let data: Data
+        do {
+            data = try JSONEncoder().encode(rates)
+        } catch {
+            return .failure(.encodingFailed)
+        }
+
         let parentDirectory = ratesFileURL.deletingLastPathComponent()
-        try? fileManager.createDirectory(at: parentDirectory, withIntermediateDirectories: true)
-        try? data.write(to: ratesFileURL, options: [.atomic])
+        do {
+            try fileManager.createDirectory(at: parentDirectory, withIntermediateDirectories: true)
+        } catch {
+            return .failure(.directoryCreationFailed(underlying: error))
+        }
+
+        do {
+            try data.write(to: ratesFileURL, options: [.atomic])
+        } catch {
+            return .failure(.writeFailed(underlying: error))
+        }
+
+        return .success(())
     }
 
-    static func loadRates(from fileURL: URL) -> [ExchangeRate] {
-        guard let data = try? Data(contentsOf: fileURL),
-              let rates = try? JSONDecoder().decode([ExchangeRate].self, from: data) else {
+    static func loadRates(from fileURL: URL, logger: NetworkLogger) -> [ExchangeRate] {
+        let data: Data
+        do {
+            data = try Data(contentsOf: fileURL)
+        } catch {
+            logger.log("Unable to read cached rates file: \(error)", level: .warning)
             return []
         }
-        return rates
+
+        do {
+            return try JSONDecoder().decode([ExchangeRate].self, from: data)
+        } catch {
+            logger.log("Unable to decode cached rates file: \(error)", level: .warning)
+            return []
+        }
     }
 
     static func makeRatesFileURL(fileManager: FileManager, cacheDirectoryURL: URL?) -> URL {

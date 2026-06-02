@@ -39,6 +39,7 @@ struct ExchangeListReducerTests {
         #expect(output.state.rates.count == 1)
         #expect(output.state.bottomInputRaw == "36.80")
         #expect(output.state.isRealtimeRates == true)
+        #expect(output.state.unitQuoteRate == decimal("18.400000"))
         #expect(output.effect == nil)
     }
 
@@ -46,10 +47,11 @@ struct ExchangeListReducerTests {
     func ratesLoadedFailureSetsError() {
         let output = sut.reduce(
             state: .initial(),
-            action: .ratesLoaded(.failure(TestError.sample)))
+            action: .ratesLoaded(.failure(.ratesUnavailable)))
 
-        #expect(output.state.phase == .error(message: TestError.sample.localizedDescription))
-        #expect(output.state.errorMessage == TestError.sample.localizedDescription)
+        let message = ExchangeDomainError.ratesUnavailable.errorDescription ?? ""
+        #expect(output.state.phase == .error(message: message))
+        #expect(output.state.errorMessage == message)
         #expect(output.effect == nil)
     }
 
@@ -79,7 +81,7 @@ struct ExchangeListReducerTests {
         #expect(output.effect == nil)
     }
 
-    @Test("performSwap flips currencies and requests refreshed rates")
+    @Test("performSwap flips currencies without unnecessary fetch when currency set is unchanged")
     func performSwapFlipsCurrencies() {
         let state = ExchangeListState.initial().with(
             topInputRaw: "10",
@@ -92,7 +94,33 @@ struct ExchangeListReducerTests {
         #expect(output.state.bottomCurrency.code == "USDC")
         #expect(output.state.topInputRaw == "184.00")
         #expect(output.state.bottomInputRaw == "10")
+        #expect(output.effect == nil)
+    }
+
+    @Test("refreshIfNeeded fetches when last update is stale")
+    func refreshIfNeededFetchesWhenStale() {
+        let staleDate = Date().addingTimeInterval(-(ExchangeListRefreshPolicy.ratesRefreshInterval + 1))
+        let state = ExchangeListState.initial().with(
+            rates: [rate(quote: "MXN", ask: "18.41", bid: "18.39")],
+            lastUpdatedAt: .some(staleDate)
+        )
+
+        let output = sut.reduce(state: state, action: .refreshIfNeeded)
+
         #expect(output.effect == .fetchRates(currencies: ["MXN"]))
+    }
+
+    @Test("refreshIfNeeded skips fetch when rates are fresh")
+    func refreshIfNeededSkipsWhenFresh() {
+        let freshDate = Date().addingTimeInterval(-10)
+        let state = ExchangeListState.initial().with(
+            rates: [rate(quote: "MXN", ask: "18.41", bid: "18.39")],
+            lastUpdatedAt: .some(freshDate)
+        )
+
+        let output = sut.reduce(state: state, action: .refreshIfNeeded)
+
+        #expect(output.effect == nil)
     }
 
     @Test("applyCurrency updates bottom currency and fetches rates")

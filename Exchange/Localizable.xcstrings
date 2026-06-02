@@ -37,6 +37,26 @@
         }
       }
     },
+    "exchange.error.invalidRemoteData" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Received invalid exchange rate data."
+          }
+        }
+      }
+    },
+    "exchange.error.ratesUnavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to load exchange rates. Check your connection and try again."
+          }
+        }
+      }
+    },
     "exchange.currencyPicker.title" : {
       "localizations" : {
         "en" : {
