@@ -59,6 +59,7 @@ struct CurrencyAmountInputRow: View {
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.trailing)
                 .frame(maxWidth: 150)
+                .accessibilityLabel("Amount in \(display.title)")
         }
         .padding(.horizontal, UIConstants.Spacing.md)
         .padding(.vertical, UIConstants.Spacing.lg)
@@ -68,6 +69,7 @@ struct CurrencyAmountInputRow: View {
     private func currencyIcon(for display: CurrencyDisplay) -> some View {
         if let flag = display.flagEmoji {
             Text(flag)
+                .accessibilityHidden(true)
         } else {
             Image(systemName: display.fallbackSymbolName ?? "globe")
                 .font(.subheadline)

@@ -24,5 +24,6 @@ struct SwapButton: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Swap currencies")
     }
 }

@@ -69,6 +69,7 @@ struct CurrencyPickerView<VM: ViewModelProtocol>: View where VM.State == Currenc
     private func currencyIcon(for display: CurrencyDisplay) -> some View {
         if let flag = display.flagEmoji {
             Text(flag)
+                .accessibilityHidden(true)
         } else {
             Image(systemName: display.fallbackSymbolName ?? "globe")
                 .foregroundStyle(.secondary)
