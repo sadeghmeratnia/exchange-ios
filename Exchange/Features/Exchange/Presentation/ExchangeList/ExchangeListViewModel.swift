@@ -50,14 +50,8 @@ final class ExchangeListViewModel: ExchangeListViewModelProtocol {
         case .swapTapped:
             send(.performSwap)
 
-        case let .currencyTapped(row):
-            send(.openPicker(row: row))
-
-        case let .currencySelected(code):
-            send(.applyCurrency(code))
-
-        case .currencyPickerDismissed:
-            send(.closePicker)
+        case let .currencySelected(row, code):
+            send(.applyCurrency(row: row, code: code))
 
         case .retryTapped:
             send(.retry)

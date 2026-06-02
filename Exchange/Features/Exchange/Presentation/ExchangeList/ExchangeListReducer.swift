@@ -57,20 +57,8 @@ struct ExchangeListReducer {
             let nextState = recalculateOppositeAmount(from: swappedState)
             return (nextState, .fetchRates(currencies: requestedCurrencyCodes(from: nextState)))
 
-        case let .openPicker(row):
-            let nextState = state.with(
-                isCurrencyPickerPresented: true,
-                currencyPickerRow: .some(row))
-            return (nextState, nil)
-
-        case .closePicker:
-            let nextState = state.with(
-                isCurrencyPickerPresented: false,
-                currencyPickerRow: .some(nil))
-            return (nextState, nil)
-
-        case let .applyCurrency(code):
-            let selectedState = state.withCurrencySelection(code: code)
+        case let .applyCurrency(row, code):
+            let selectedState = state.withCurrencySelection(row: row, code: code)
             let nextState = recalculateOppositeAmount(from: selectedState)
             return (nextState, .fetchRates(currencies: requestedCurrencyCodes(from: nextState)))
 
@@ -130,17 +118,13 @@ private extension ExchangeListReducer {
 }
 
 private extension ExchangeListState {
-    func withCurrencySelection(code: String) -> ExchangeListState {
+    func withCurrencySelection(row: ExchangeCurrencyRow, code: String) -> ExchangeListState {
         let selectedCurrency = Currency(code: code)
-        let nextState: ExchangeListState
-        switch currencyPickerRow {
+        switch row {
         case .top:
-            nextState = with(topCurrency: selectedCurrency)
-        case .bottom, .none:
-            nextState = with(bottomCurrency: selectedCurrency)
+            return with(topCurrency: selectedCurrency)
+        case .bottom:
+            return with(bottomCurrency: selectedCurrency)
         }
-        return nextState.with(
-            isCurrencyPickerPresented: false,
-            currencyPickerRow: .some(nil))
     }
 }

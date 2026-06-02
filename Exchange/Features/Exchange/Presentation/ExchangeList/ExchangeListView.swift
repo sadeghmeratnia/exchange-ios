@@ -11,6 +11,7 @@ import SwiftUI
 
 struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeListState, VM.Trigger == ExchangeListTrigger {
     @ObservedObject private var viewModel: VM
+    @State private var presentedCurrencyRow: ExchangeCurrencyRow?
     private let currencyDisplayProvider: any CurrencyDisplayProviding
 
     init(viewModel: VM,
@@ -31,8 +32,8 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
         .onAppear {
             viewModel.onTrigger(.screenAppeared)
         }
-        .sheet(isPresented: pickerBinding) {
-            currencyPickerSheet
+        .sheet(item: $presentedCurrencyRow) { row in
+            currencyPickerSheet(for: row)
                 .presentationDetents([.fraction(0.52)])
                 .presentationDragIndicator(.visible)
         }
@@ -54,7 +55,9 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
                     currencyCode: viewModel.state.topCurrency.code,
                     amountText: viewModel.state.topInputRaw,
                     isSelectableCurrency: viewModel.state.topCurrency.isUSDc == false,
-                    onCurrencyTap: { viewModel.onTrigger(.currencyTapped(row: .top)) },
+                    onCurrencyTap: {
+                        presentedCurrencyRow = .top
+                    },
                     onAmountChanged: { viewModel.onTrigger(.topAmountChanged($0)) },
                     currencyDisplayProvider: currencyDisplayProvider)
 
@@ -64,7 +67,9 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
                     currencyCode: viewModel.state.bottomCurrency.code,
                     amountText: viewModel.state.bottomInputRaw,
                     isSelectableCurrency: viewModel.state.bottomCurrency.isUSDc == false,
-                    onCurrencyTap: { viewModel.onTrigger(.currencyTapped(row: .bottom)) },
+                    onCurrencyTap: {
+                        presentedCurrencyRow = .bottom
+                    },
                     onAmountChanged: { viewModel.onTrigger(.bottomAmountChanged($0)) },
                     currencyDisplayProvider: currencyDisplayProvider)
             }
@@ -80,30 +85,21 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
         }
     }
 
-    private var currencyPickerSheet: some View {
+    private func currencyPickerSheet(for row: ExchangeCurrencyRow) -> some View {
         CurrencyPickerView(
             viewModel: CurrencyPickerViewModel(
                 initialState: CurrencyPickerState(
                     currencies: viewModel.state.availableCurrencies,
-                    selectedCurrencyCode: pickerSelectedCode,
+                    selectedCurrencyCode: pickerSelectedCode(for: row),
                     isLoading: viewModel.state.availableCurrencies.isEmpty),
                 onSelectCurrency: { selectedCode in
-                    viewModel.onTrigger(.currencySelected(selectedCode))
+                    viewModel.onTrigger(.currencySelected(row: row, code: selectedCode))
+                    presentedCurrencyRow = nil
                 },
                 onClose: {
-                    viewModel.onTrigger(.currencyPickerDismissed)
+                    presentedCurrencyRow = nil
                 }),
             currencyDisplayProvider: currencyDisplayProvider)
-    }
-
-    private var pickerBinding: Binding<Bool> {
-        Binding(
-            get: { viewModel.state.isCurrencyPickerPresented },
-            set: { isPresented in
-                if isPresented == false {
-                    viewModel.onTrigger(.currencyPickerDismissed)
-                }
-            })
     }
 
     @ViewBuilder
@@ -156,11 +152,11 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
         currencyDisplayProvider.display(for: currency.code).title
     }
 
-    private var pickerSelectedCode: String {
-        switch viewModel.state.currencyPickerRow {
+    private func pickerSelectedCode(for row: ExchangeCurrencyRow) -> String {
+        switch row {
         case .top:
             return viewModel.state.topCurrency.code
-        case .bottom, .none:
+        case .bottom:
             return viewModel.state.bottomCurrency.code
         }
     }
@@ -181,8 +177,6 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
         return "\(prefix) \(relative)"
     }
 }
-
-typealias DefaultExchangeListView = ExchangeListView<ExchangeListViewModel>
 
 #Preview("Exchange List Loaded") {
     ExchangeListView(

@@ -18,32 +18,21 @@ final class ExchangeFeatureBuilder {
         self.appContainer = appContainer
     }
 
-    func makeRootView() -> ExchangeListRootView {
-        let remoteDataSource = ExchangeRemoteDataSource(networkClient: appContainer.networkClient)
-        let localCacheDataSource = ExchangeLocalCacheDataSource()
+    func makeRootView() -> some View {
+        let remote = ExchangeRemoteDataSource(networkClient: appContainer.networkClient)
+        let cache = ExchangeLocalCacheDataSource()
         let repository = ExchangeRepository(
-            remoteDataSource: remoteDataSource,
-            localCacheDataSource: localCacheDataSource)
+            remoteDataSource: remote,
+            localCacheDataSource: cache)
 
-        let getRatesUseCase = GetExchangeRatesUseCase(repository: repository)
-        let getCurrenciesUseCase = GetAvailableCurrenciesUseCase(repository: repository)
+        let viewModel = ExchangeListViewModel(
+            getExchangeRatesUseCase: GetExchangeRatesUseCase(repository: repository),
+            getAvailableCurrenciesUseCase: GetAvailableCurrenciesUseCase(repository: repository))
 
-        let exchangeListViewModel = ExchangeListViewModel(
-            getExchangeRatesUseCase: getRatesUseCase,
-            getAvailableCurrenciesUseCase: getCurrenciesUseCase)
-
-        let coordinator = ExchangeListCoordinator(
-            exchangeListBuilder: ExchangeListViewBuilder(viewModel: exchangeListViewModel))
-        return coordinator.makeRootView()
-    }
-}
-
-// MARK: - ExchangeListViewBuilder
-
-private struct ExchangeListViewBuilder: ExchangeListBuilding {
-    let viewModel: ExchangeListViewModel
-
-    func makeView() -> DefaultExchangeListView {
-        return DefaultExchangeListView(viewModel: viewModel)
+        return NavigationStack {
+            ExchangeListView(
+                viewModel: viewModel,
+                currencyDisplayProvider: CurrencyDisplayProvider())
+        }
     }
 }

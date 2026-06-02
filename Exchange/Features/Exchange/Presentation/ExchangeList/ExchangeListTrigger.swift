@@ -7,21 +7,21 @@
 
 import Foundation
 
+enum ExchangeCurrencyRow: String, Equatable, Hashable, Identifiable {
+    case top
+    case bottom
+
+    var id: String { rawValue }
+}
+
 // MARK: - ExchangeListTrigger
 
 enum ExchangeListTrigger: Equatable {
-    enum CurrencyRow: Equatable {
-        case top
-        case bottom
-    }
-
     case screenAppeared
     case topAmountChanged(String)
     case bottomAmountChanged(String)
     case swapTapped
-    case currencyTapped(row: CurrencyRow)
-    case currencySelected(String)
-    case currencyPickerDismissed
+    case currencySelected(row: ExchangeCurrencyRow, code: String)
     case retryTapped
     case dismissError
 }

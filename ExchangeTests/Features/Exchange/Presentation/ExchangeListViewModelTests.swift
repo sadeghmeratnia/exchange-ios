@@ -45,17 +45,6 @@ struct ExchangeListViewModelTests {
         #expect(sut.state.bottomInputRaw == "184.00")
     }
 
-    @Test("currency picker triggers open and dismiss")
-    func pickerOpenAndDismissTriggers() async {
-        let sut = makeSUT(repository: MockExchangeRepository())
-
-        sut.onTrigger(.currencyTapped(row: .bottom))
-        #expect(sut.state.isCurrencyPickerPresented == true)
-
-        sut.onTrigger(.currencyPickerDismissed)
-        #expect(sut.state.isCurrencyPickerPresented == false)
-    }
-
     @Test("rates failure sets error phase")
     func ratesFailureSetsError() async throws {
         let repository = MockExchangeRepository()
@@ -93,8 +82,8 @@ struct ExchangeListViewModelTests {
         }
         let sut = makeSUT(repository: repository)
 
-        sut.onTrigger(.currencySelected("MXN"))
-        sut.onTrigger(.currencySelected("ARS"))
+        sut.onTrigger(.currencySelected(row: .bottom, code: "MXN"))
+        sut.onTrigger(.currencySelected(row: .bottom, code: "ARS"))
         try await Task.sleep(nanoseconds: 400_000_000)
 
         #expect(sut.state.bottomCurrency.code == "ARS")

@@ -37,8 +37,6 @@ struct ExchangeListState: Equatable {
     var rates: [ExchangeRate]
     var isRealtimeRates: Bool
     var lastUpdatedAt: Date?
-    var isCurrencyPickerPresented: Bool
-    var currencyPickerRow: ExchangeListTrigger.CurrencyRow?
     var errorMessage: String?
 
     static func initial() -> ExchangeListState {
@@ -53,8 +51,6 @@ struct ExchangeListState: Equatable {
             rates: [],
             isRealtimeRates: true,
             lastUpdatedAt: nil,
-            isCurrencyPickerPresented: false,
-            currencyPickerRow: nil,
             errorMessage: nil)
     }
 }
@@ -72,8 +68,6 @@ extension ExchangeListState {
               rates: [ExchangeRate]? = nil,
               isRealtimeRates: Bool? = nil,
               lastUpdatedAt: Date?? = nil,
-              isCurrencyPickerPresented: Bool? = nil,
-              currencyPickerRow: ExchangeListTrigger.CurrencyRow?? = nil,
               errorMessage: String?? = nil) -> ExchangeListState {
         ExchangeListState(
             phase: phase ?? self.phase,
@@ -86,8 +80,6 @@ extension ExchangeListState {
             rates: rates ?? self.rates,
             isRealtimeRates: isRealtimeRates ?? self.isRealtimeRates,
             lastUpdatedAt: lastUpdatedAt ?? self.lastUpdatedAt,
-            isCurrencyPickerPresented: isCurrencyPickerPresented ?? self.isCurrencyPickerPresented,
-            currencyPickerRow: currencyPickerRow ?? self.currencyPickerRow,
             errorMessage: errorMessage ?? self.errorMessage)
     }
 

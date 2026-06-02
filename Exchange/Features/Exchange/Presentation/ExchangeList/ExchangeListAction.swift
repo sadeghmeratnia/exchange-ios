@@ -16,9 +16,7 @@ enum ExchangeListAction {
     case setTopInput(String)
     case setBottomInput(String)
     case performSwap
-    case openPicker(row: ExchangeListTrigger.CurrencyRow)
-    case closePicker
-    case applyCurrency(String)
+    case applyCurrency(row: ExchangeCurrencyRow, code: String)
     case retry
     case clearError
 }
