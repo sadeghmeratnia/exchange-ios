@@ -29,20 +29,21 @@ struct ExchangeRepository: ExchangeRepositoryProtocol {
             guard mappedRates.isEmpty == false else {
                 throw ExchangeDomainError.invalidRemoteData
             }
-            localCacheDataSource.saveRates(mappedRates)
+            await localCacheDataSource.saveRates(mappedRates)
             return ExchangeRatesSnapshot(
                 rates: mappedRates,
                 isRealtime: true,
                 updatedAt: mappedRates.map(\.timestamp).max())
         } catch {
-            let cachedRates = localCacheDataSource.getCachedRates()
+            let cachedRates = await localCacheDataSource.getCachedRates()
             guard cachedRates.isEmpty == false else {
                 throw ExchangeDomainError.ratesUnavailable
             }
+            let lastSuccessfulUpdate = await localCacheDataSource.getLastSuccessfulUpdate()
             return ExchangeRatesSnapshot(
                 rates: cachedRates,
                 isRealtime: false,
-                updatedAt: localCacheDataSource.getLastSuccessfulUpdate() ?? cachedRates.map(\.timestamp).max())
+                updatedAt: lastSuccessfulUpdate ?? cachedRates.map(\.timestamp).max())
         }
     }
 
@@ -50,25 +51,19 @@ struct ExchangeRepository: ExchangeRepositoryProtocol {
         do {
             let codes = try await remoteDataSource.fetchAvailableCurrencyCodes()
             if codes.isEmpty == false {
-                localCacheDataSource.saveCurrencyCodes(codes)
+                await localCacheDataSource.saveCurrencyCodes(codes)
                 return codes.map(Currency.init(code:))
             }
-            return fallbackCurrencyCodes().map(Currency.init(code:))
+            let fallbackCodes = await fallbackCurrencyCodes()
+            return fallbackCodes.map(Currency.init(code:))
         } catch {
-            return fallbackCurrencyCodes().map(Currency.init(code:))
+            let fallbackCodes = await fallbackCurrencyCodes()
+            return fallbackCodes.map(Currency.init(code:))
         }
     }
 
-    func getLastCachedRates() -> [ExchangeRate] {
-        localCacheDataSource.getCachedRates()
-    }
-
-    func saveRatesToCache(_ rates: [ExchangeRate]) {
-        localCacheDataSource.saveRates(rates)
-    }
-
-    private func fallbackCurrencyCodes() -> [String] {
-        let cachedCodes = localCacheDataSource.getCachedCurrencyCodes()
+    private func fallbackCurrencyCodes() async -> [String] {
+        let cachedCodes = await localCacheDataSource.getCachedCurrencyCodes()
         return cachedCodes.isEmpty ? seedFallbackCodes : cachedCodes
     }
 }

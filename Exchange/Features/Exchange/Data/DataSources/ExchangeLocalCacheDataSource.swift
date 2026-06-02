@@ -9,66 +9,86 @@ import Foundation
 
 // MARK: - ExchangeLocalCacheDataSourceProtocol
 
-protocol ExchangeLocalCacheDataSourceProtocol {
-    func getCachedRates() -> [ExchangeRate]
-    func saveRates(_ rates: [ExchangeRate])
-    func getLastSuccessfulUpdate() -> Date?
-    func getCachedCurrencyCodes() -> [String]
-    func saveCurrencyCodes(_ codes: [String])
+protocol ExchangeLocalCacheDataSourceProtocol: Sendable {
+    func getCachedRates() async -> [ExchangeRate]
+    func saveRates(_ rates: [ExchangeRate]) async
+    func getLastSuccessfulUpdate() async -> Date?
+    func getCachedCurrencyCodes() async -> [String]
+    func saveCurrencyCodes(_ codes: [String]) async
 }
 
 // MARK: - ExchangeLocalCacheDataSource
 
-final class ExchangeLocalCacheDataSource: ExchangeLocalCacheDataSourceProtocol {
+actor ExchangeLocalCacheDataSource: ExchangeLocalCacheDataSourceProtocol {
     private enum Keys {
         static let lastSuccessfulRateUpdate = "exchange.lastSuccessfulRateUpdate"
         static let cachedCurrencyCodes = "exchange.cachedCurrencyCodes"
-        static let cachedRates = "exchange.cachedRates"
     }
 
     private var inMemoryRates: [ExchangeRate] = []
     private let userDefaults: UserDefaults
+    private let fileManager: FileManager
+    private let ratesFileURL: URL
 
-    init(userDefaults: UserDefaults = .standard) {
+    init(
+        userDefaults: UserDefaults = .standard,
+        fileManager: FileManager = .default,
+        cacheDirectoryURL: URL? = nil
+    ) {
         self.userDefaults = userDefaults
-        self.inMemoryRates = Self.loadRates(from: userDefaults)
+        self.fileManager = fileManager
+        self.ratesFileURL = Self.makeRatesFileURL(
+            fileManager: fileManager,
+            cacheDirectoryURL: cacheDirectoryURL
+        )
+        self.inMemoryRates = Self.loadRates(from: ratesFileURL)
     }
 
-    func getCachedRates() -> [ExchangeRate] {
+    func getCachedRates() async -> [ExchangeRate] {
         inMemoryRates
     }
 
-    func saveRates(_ rates: [ExchangeRate]) {
+    func saveRates(_ rates: [ExchangeRate]) async {
         inMemoryRates = rates
+        persistRates(rates)
         let latestTimestamp = rates.map(\.timestamp).max()
         userDefaults.set(latestTimestamp, forKey: Keys.lastSuccessfulRateUpdate)
-        userDefaults.set(Self.encodeRates(rates), forKey: Keys.cachedRates)
     }
 
-    func getLastSuccessfulUpdate() -> Date? {
+    func getLastSuccessfulUpdate() async -> Date? {
         userDefaults.object(forKey: Keys.lastSuccessfulRateUpdate) as? Date
     }
 
-    func getCachedCurrencyCodes() -> [String] {
+    func getCachedCurrencyCodes() async -> [String] {
         userDefaults.stringArray(forKey: Keys.cachedCurrencyCodes) ?? []
     }
 
-    func saveCurrencyCodes(_ codes: [String]) {
+    func saveCurrencyCodes(_ codes: [String]) async {
         let normalizedCodes = Array(Set(codes.map { $0.uppercased() })).sorted()
         userDefaults.set(normalizedCodes, forKey: Keys.cachedCurrencyCodes)
     }
 }
 
 private extension ExchangeLocalCacheDataSource {
-    static func encodeRates(_ rates: [ExchangeRate]) -> Data? {
-        try? JSONEncoder().encode(rates)
+    func persistRates(_ rates: [ExchangeRate]) {
+        guard let data = try? JSONEncoder().encode(rates) else { return }
+        let parentDirectory = ratesFileURL.deletingLastPathComponent()
+        try? fileManager.createDirectory(at: parentDirectory, withIntermediateDirectories: true)
+        try? data.write(to: ratesFileURL, options: [.atomic])
     }
 
-    static func loadRates(from userDefaults: UserDefaults) -> [ExchangeRate] {
-        guard let data = userDefaults.data(forKey: Keys.cachedRates),
+    static func loadRates(from fileURL: URL) -> [ExchangeRate] {
+        guard let data = try? Data(contentsOf: fileURL),
               let rates = try? JSONDecoder().decode([ExchangeRate].self, from: data) else {
             return []
         }
         return rates
+    }
+
+    static func makeRatesFileURL(fileManager: FileManager, cacheDirectoryURL: URL?) -> URL {
+        let baseURL = cacheDirectoryURL
+            ?? fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+        return baseURL.appendingPathComponent("exchange.cachedRates.json", isDirectory: false)
     }
 }

@@ -163,12 +163,4 @@ private final class MockExchangeRepository: ExchangeRepositoryProtocol {
     func fetchAvailableCurrencies() async -> [Currency] {
         fetchAvailableCurrenciesHandler?() ?? []
     }
-
-    func getLastCachedRates() -> [ExchangeRate] {
-        cachedRates
-    }
-
-    func saveRatesToCache(_ rates: [ExchangeRate]) {
-        cachedRates = rates
-    }
 }

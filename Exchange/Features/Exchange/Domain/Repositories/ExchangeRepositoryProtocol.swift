@@ -12,6 +12,4 @@ import Foundation
 protocol ExchangeRepositoryProtocol {
     func fetchRates(for currencies: [String]) async throws -> ExchangeRatesSnapshot
     func fetchAvailableCurrencies() async -> [Currency]
-    func getLastCachedRates() -> [ExchangeRate]
-    func saveRatesToCache(_ rates: [ExchangeRate])
 }

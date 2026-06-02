@@ -142,30 +142,30 @@ private final class MockRemoteDataSource: ExchangeRemoteDataSourceProtocol {
     }
 }
 
-private final class MockLocalCacheDataSource: ExchangeLocalCacheDataSourceProtocol {
+private final class MockLocalCacheDataSource: ExchangeLocalCacheDataSourceProtocol, @unchecked Sendable {
     var cachedRates: [ExchangeRate] = []
     var savedRates: [ExchangeRate] = []
     var cachedCurrencyCodes: [String] = []
     var savedCurrencyCodes: [String] = []
 
-    func getCachedRates() -> [ExchangeRate] {
+    func getCachedRates() async -> [ExchangeRate] {
         cachedRates
     }
 
-    func saveRates(_ rates: [ExchangeRate]) {
+    func saveRates(_ rates: [ExchangeRate]) async {
         savedRates = rates
         cachedRates = rates
     }
 
-    func getLastSuccessfulUpdate() -> Date? {
+    func getLastSuccessfulUpdate() async -> Date? {
         nil
     }
 
-    func getCachedCurrencyCodes() -> [String] {
+    func getCachedCurrencyCodes() async -> [String] {
         cachedCurrencyCodes
     }
 
-    func saveCurrencyCodes(_ codes: [String]) {
+    func saveCurrencyCodes(_ codes: [String]) async {
         savedCurrencyCodes = codes
         cachedCurrencyCodes = codes
     }
