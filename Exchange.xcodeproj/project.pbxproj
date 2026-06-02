@@ -27,6 +27,7 @@
 		7213B4D72FCB09CE002797E3 /* Exchange.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Exchange.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7213B4E42FCB09CF002797E3 /* ExchangeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ExchangeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7213B4EE2FCB09CF002797E3 /* ExchangeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ExchangeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		72A497CC2FCF2C28002F1629 /* Exchange.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = Exchange.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +76,7 @@
 		7213B4CE2FCB09CE002797E3 = {
 			isa = PBXGroup;
 			children = (
+				72A497CC2FCF2C28002F1629 /* Exchange.xctestplan */,
 				7213B4D92FCB09CE002797E3 /* Exchange */,
 				7213B4E72FCB09CF002797E3 /* ExchangeTests */,
 				7213B4F12FCB09CF002797E3 /* ExchangeUITests */,

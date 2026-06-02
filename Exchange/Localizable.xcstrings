@@ -4,6 +4,9 @@
     "" : {
 
     },
+    "Amount in %@" : {
+
+    },
     "exchange.accessibility.currency" : {
       "localizations" : {
         "en" : {
@@ -83,6 +86,9 @@
           }
         }
       }
+    },
+    "Swap currencies" : {
+
     }
   },
   "version" : "1.0"
