@@ -19,8 +19,8 @@ struct ExchangeListStatusSubtitleBuilderTests {
         let state = ExchangeListState.initial().with(
             rates: [rate(quote: "MXN", ask: "18.41", bid: "18.39")],
             isRealtimeRates: true,
-            lastUpdatedAt: .some(fixedNow.addingTimeInterval(-120)),
-            unitQuoteRate: .some(decimal("18.400000")))
+            lastUpdatedAt: .set(fixedNow.addingTimeInterval(-120)),
+            unitQuoteRate: .set(decimal("18.400000")))
 
         let subtitle = ExchangeListStatusSubtitleBuilder.subtitle(
             for: state,
@@ -33,7 +33,7 @@ struct ExchangeListStatusSubtitleBuilderTests {
 
     @Test("shows placeholder when unit quote is unavailable")
     func showsPlaceholderWhenQuoteMissing() {
-        let state = ExchangeListState.initial().with(unitQuoteRate: .some(nil))
+        let state = ExchangeListState.initial().with(unitQuoteRate: .set(nil))
 
         let subtitle = ExchangeListStatusSubtitleBuilder.subtitle(
             for: state,

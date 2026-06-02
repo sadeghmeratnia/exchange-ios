@@ -33,8 +33,8 @@ enum ExchangePreviewFixtures {
         availableCurrencies: currencies,
         rates: rates,
         isRealtimeRates: false,
-        lastUpdatedAt: .some(previewDate),
-        unitQuoteRate: .some(Decimal(18.40)))
+        lastUpdatedAt: .set(previewDate),
+        unitQuoteRate: .set(Decimal(18.40)))
 
     static let exchangeListLoading: ExchangeListState = .initial().with(
         phase: .loading(.initial),
@@ -45,7 +45,7 @@ enum ExchangePreviewFixtures {
         phase: .error(message: "Unable to fetch latest rates."),
         topInputRaw: "9,999",
         bottomInputRaw: "",
-        errorMessage: .some("Unable to fetch latest rates."))
+        errorMessage: .set("Unable to fetch latest rates."))
 
     static let currencyPickerLoaded = CurrencyPickerState(
         currencies: currencies,

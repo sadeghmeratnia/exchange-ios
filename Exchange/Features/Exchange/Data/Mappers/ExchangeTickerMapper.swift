@@ -10,12 +10,18 @@ import Foundation
 // MARK: - ExchangeTickerMapper
 
 struct ExchangeTickerMapper {
+    private static let logger = OSLogger(category: .network)
+
     static func map(_ dto: ExchangeTickerDTO) -> ExchangeRate? {
         let bookParts = dto.book.split(separator: "_").map { String($0).uppercased() }
-        guard bookParts.count == 2 else { return nil }
+        guard bookParts.count == 2 else {
+            logger.log("Dropping ticker with malformed book: \(dto.book)", level: .warning)
+            return nil
+        }
         guard let ask = Decimal(string: dto.ask, locale: Locale(identifier: "en_US_POSIX")),
               let bid = Decimal(string: dto.bid, locale: Locale(identifier: "en_US_POSIX")),
               let timestamp = parseDate(dto.date) else {
+            logger.log("Dropping ticker with unparseable fields – book: \(dto.book), ask: \(dto.ask), bid: \(dto.bid), date: \(dto.date)", level: .warning)
             return nil
         }
 

@@ -33,7 +33,7 @@ struct CurrencyPickerView<VM: ViewModelProtocol>: View where VM.State == Currenc
                             viewModel.onTrigger(.currencyTapped(currency.code))
                         } label: {
                             HStack(spacing: UIConstants.Spacing.md) {
-                                currencyIcon(for: display)
+                                CurrencyIconView(display: display)
                                 Text(display.title)
                                     .foregroundStyle(.primary)
                                 Spacer()
@@ -65,17 +65,6 @@ struct CurrencyPickerView<VM: ViewModelProtocol>: View where VM.State == Currenc
         }
     }
 
-    @ViewBuilder
-    private func currencyIcon(for display: CurrencyDisplay) -> some View {
-        if let flag = display.flagEmoji {
-            Text(flag)
-                .accessibilityHidden(true)
-        } else {
-            Image(systemName: display.fallbackSymbolName ?? "globe")
-                .foregroundStyle(.secondary)
-                .accessibilityLabel(L10n.Exchange.Accessibility.currency)
-        }
-    }
 }
 
 #Preview("Currency Picker Loaded") {

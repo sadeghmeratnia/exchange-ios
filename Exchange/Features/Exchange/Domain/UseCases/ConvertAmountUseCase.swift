@@ -36,19 +36,24 @@ struct ConvertAmountUseCase {
         return round(converted, scale: 6)
     }
 
+    private func midRate(for rate: ExchangeRate) -> Decimal {
+        (rate.ask + rate.bid) / 2
+    }
+
     private func convertFromUSDc(amount: Decimal, to quoteCurrency: Currency, rates: [ExchangeRate]) -> Decimal? {
         guard let rate = rates.first(where: { $0.baseCurrency.isUSDc && $0.quoteCurrency == quoteCurrency }) else {
             return nil
         }
-        return amount * rate.mid
+        return amount * midRate(for: rate)
     }
 
     private func convertToUSDc(amount: Decimal, from quoteCurrency: Currency, rates: [ExchangeRate]) -> Decimal? {
-        guard let rate = rates.first(where: { $0.baseCurrency.isUSDc && $0.quoteCurrency == quoteCurrency }),
-              rate.mid != .zero else {
+        guard let rate = rates.first(where: { $0.baseCurrency.isUSDc && $0.quoteCurrency == quoteCurrency }) else {
             return nil
         }
-        return amount / rate.mid
+        let mid = midRate(for: rate)
+        guard mid != .zero else { return nil }
+        return amount / mid
     }
 
     private func round(_ value: Decimal, scale: Int) -> Decimal {

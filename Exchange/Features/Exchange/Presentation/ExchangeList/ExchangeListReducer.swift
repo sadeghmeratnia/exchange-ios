@@ -11,8 +11,14 @@ import Foundation
 
 struct ExchangeListReducer {
     typealias ReduceOutput = (state: ExchangeListState, effect: ExchangeListEffect?)
-    private let convertAmountUseCase = ConvertAmountUseCase()
-    private let refreshInterval = ExchangeListRefreshPolicy.ratesRefreshInterval
+    private let convertAmountUseCase: ConvertAmountUseCase
+    private let refreshInterval: TimeInterval
+
+    init(convertAmountUseCase: ConvertAmountUseCase = ConvertAmountUseCase(),
+         refreshInterval: TimeInterval = ExchangeListRefreshPolicy.ratesRefreshInterval) {
+        self.convertAmountUseCase = convertAmountUseCase
+        self.refreshInterval = refreshInterval
+    }
 
     func reduce(state: ExchangeListState, action: ExchangeListAction) -> ReduceOutput {
         switch action {
@@ -31,8 +37,8 @@ struct ExchangeListReducer {
                 phase: .loaded,
                 rates: snapshot.rates,
                 isRealtimeRates: snapshot.isRealtime,
-                lastUpdatedAt: .some(snapshot.updatedAt),
-                errorMessage: .some(nil))
+                lastUpdatedAt: .set(snapshot.updatedAt),
+                errorMessage: .set(nil))
             let nextState = applyConversions(from: loadedState)
             return (nextState, nil)
 
@@ -79,7 +85,7 @@ struct ExchangeListReducer {
             return (nextState, .fetchRates(currencies: requestedCurrencyCodes(from: nextState)))
 
         case .clearError:
-            let nextState = state.with(errorMessage: .some(nil))
+            let nextState = state.with(errorMessage: .set(nil))
             return (nextState, nil)
         }
     }
@@ -112,7 +118,7 @@ private extension ExchangeListReducer {
 
     func applyConversions(from state: ExchangeListState) -> ExchangeListState {
         let withAmounts = recalculateOppositeAmount(from: state)
-        return withAmounts.with(unitQuoteRate: .some(unitQuoteRate(from: withAmounts)))
+        return withAmounts.with(unitQuoteRate: .set(unitQuoteRate(from: withAmounts)))
     }
 
     func unitQuoteRate(from state: ExchangeListState) -> Decimal? {

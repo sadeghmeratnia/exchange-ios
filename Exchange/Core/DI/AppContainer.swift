@@ -17,22 +17,20 @@ final class AppContainer {
         self.logger = logger
     }
 
-    #if DEBUG
-        static func preview() -> AppContainer {
-            let logger = OSLogger(category: .network)
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            decoder.dateDecodingStrategy = .iso8601
+    static func live() -> AppContainer {
+        let logger = OSLogger(category: .network)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .iso8601
 
-            let networkClient = URLSessionNetworkClient(
-                session: URLSession.shared,
-                decoder: decoder,
-                retryPolicy: DefaultRetryPolicy(),
-                logger: logger)
+        let networkClient = URLSessionNetworkClient(
+            session: URLSession.shared,
+            decoder: decoder,
+            retryPolicy: DefaultRetryPolicy(),
+            logger: logger)
 
-            return AppContainer(
-                networkClient: networkClient,
-                logger: logger)
-        }
-    #endif
+        return AppContainer(
+            networkClient: networkClient,
+            logger: logger)
+    }
 }

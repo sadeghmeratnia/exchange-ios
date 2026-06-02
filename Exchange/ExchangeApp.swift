@@ -13,20 +13,7 @@ struct ExchangeApp: App {
     private let appContainer: AppContainer
 
     init() {
-        let logger = OSLogger(category: .network)
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        decoder.dateDecodingStrategy = .iso8601
-
-        let networkClient = URLSessionNetworkClient(
-            session: URLSession.shared,
-            decoder: decoder,
-            retryPolicy: DefaultRetryPolicy(),
-            logger: logger)
-
-        self.appContainer = AppContainer(
-            networkClient: networkClient,
-            logger: logger)
+        self.appContainer = .live()
     }
 
     var body: some Scene {

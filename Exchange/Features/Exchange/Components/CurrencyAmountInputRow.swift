@@ -19,6 +19,7 @@ struct CurrencyAmountInputRow: View {
     private let currencyDisplayProvider: any CurrencyDisplayProviding
     @FocusState private var isAmountFieldFocused: Bool
     @State private var didAutoFocus = false
+    @State private var shakeOffset: CGFloat = 0
 
     init(currencyCode: String,
          amountText: String,
@@ -45,7 +46,7 @@ struct CurrencyAmountInputRow: View {
                 }
             } label: {
                 HStack(spacing: UIConstants.Spacing.sm) {
-                    currencyIcon(for: display)
+                    CurrencyIconView(display: display)
                     Text(display.title)
                         .font(.subheadline.weight(.semibold))
                     if isSelectableCurrency {
@@ -59,34 +60,40 @@ struct CurrencyAmountInputRow: View {
 
             Spacer()
 
-            TextField("", text: Binding(get: { amountText }, set: onAmountChanged))
+            TextField("", text: Binding(get: { amountText }, set: { newValue in
+                    onAmountChanged(newValue)
+                    if !newValue.isEmpty,
+                       LocalizedNumberFormatting.parseDecimalInput(newValue) == nil {
+                        triggerInvalidInputFeedback()
+                    }
+                }))
                 .font(.body.weight(.semibold))
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.trailing)
                 .frame(maxWidth: 150)
                 .focused($isAmountFieldFocused)
+                .offset(x: shakeOffset)
                 .accessibilityLabel("Amount in \(display.title)")
+                .accessibilityIdentifier("amountField_\(currencyCode)")
         }
         .padding(.horizontal, UIConstants.Spacing.md)
         .padding(.vertical, UIConstants.Spacing.lg)
         .onAppear {
             guard autoFocusOnAppear, didAutoFocus == false else { return }
             didAutoFocus = true
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 isAmountFieldFocused = true
             }
         }
     }
 
-    @ViewBuilder
-    private func currencyIcon(for display: CurrencyDisplay) -> some View {
-        if let flag = display.flagEmoji {
-            Text(flag)
-                .accessibilityHidden(true)
-        } else {
-            Image(systemName: display.fallbackSymbolName ?? "globe")
-                .font(.subheadline)
-                .accessibilityLabel(L10n.Exchange.Accessibility.currency)
+    private func triggerInvalidInputFeedback() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.warning)
+        withAnimation(.default.speed(3).repeatCount(3, autoreverses: true)) {
+            shakeOffset = 4
+        } completion: {
+            shakeOffset = 0
         }
     }
 }

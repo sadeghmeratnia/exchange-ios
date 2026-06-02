@@ -74,6 +74,28 @@ struct ConvertAmountUseCaseTests {
 
         #expect(result == nil)
     }
+
+    @Test("Conversion uses midpoint of ask and bid")
+    func conversionUsesMidpoint() {
+        let result = sut.execute(
+            amount: Decimal(1),
+            from: usdc,
+            to: mxn,
+            rates: [rate(ask: "20.00", bid: "18.00", quote: "MXN")])
+
+        #expect(result == decimal("19.000000"))
+    }
+
+    @Test("Returns nil when ask and bid are both zero")
+    func returnsNilWhenAskAndBidAreZero() {
+        let result = sut.execute(
+            amount: Decimal(100),
+            from: mxn,
+            to: usdc,
+            rates: [rate(ask: "0", bid: "0", quote: "MXN")])
+
+        #expect(result == nil)
+    }
 }
 
 private extension ConvertAmountUseCaseTests {

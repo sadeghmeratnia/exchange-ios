@@ -10,7 +10,7 @@ import Foundation
 enum LocalizedNumberFormatting {
     static func parseDecimalInput(_ input: String, locale: Locale = .current) -> Decimal? {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.isEmpty == false else { return nil }
+        guard !trimmed.isEmpty else { return nil }
 
         let currentSeparator = locale.decimalSeparator ?? "."
         let alternateSeparator = currentSeparator == "." ? "," : "."

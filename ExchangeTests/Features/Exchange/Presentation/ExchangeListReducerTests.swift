@@ -102,7 +102,7 @@ struct ExchangeListReducerTests {
         let staleDate = Date().addingTimeInterval(-(ExchangeListRefreshPolicy.ratesRefreshInterval + 1))
         let state = ExchangeListState.initial().with(
             rates: [rate(quote: "MXN", ask: "18.41", bid: "18.39")],
-            lastUpdatedAt: .some(staleDate)
+            lastUpdatedAt: .set(staleDate)
         )
 
         let output = sut.reduce(state: state, action: .refreshIfNeeded)
@@ -115,7 +115,7 @@ struct ExchangeListReducerTests {
         let freshDate = Date().addingTimeInterval(-10)
         let state = ExchangeListState.initial().with(
             rates: [rate(quote: "MXN", ask: "18.41", bid: "18.39")],
-            lastUpdatedAt: .some(freshDate)
+            lastUpdatedAt: .set(freshDate)
         )
 
         let output = sut.reduce(state: state, action: .refreshIfNeeded)
@@ -173,7 +173,7 @@ struct ExchangeListReducerTests {
 
     @Test("clearError removes error message only")
     func clearErrorClearsMessage() {
-        let state = ExchangeListState.initial().with(errorMessage: .some("boom"))
+        let state = ExchangeListState.initial().with(errorMessage: .set("boom"))
 
         let output = sut.reduce(state: state, action: .clearError)
 

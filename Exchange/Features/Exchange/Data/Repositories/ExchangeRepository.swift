@@ -26,7 +26,7 @@ struct ExchangeRepository: ExchangeRepositoryProtocol {
         do {
             let tickerDTOs = try await remoteDataSource.fetchTickers(currencies: currencies)
             let mappedRates = ExchangeTickerMapper.map(tickerDTOs)
-            guard mappedRates.isEmpty == false else {
+            guard !mappedRates.isEmpty else {
                 throw ExchangeDomainError.invalidRemoteData
             }
             await localCacheDataSource.saveRates(mappedRates)
@@ -36,7 +36,7 @@ struct ExchangeRepository: ExchangeRepositoryProtocol {
                 updatedAt: mappedRates.map(\.timestamp).max())
         } catch {
             let cachedRates = await localCacheDataSource.getCachedRates()
-            guard cachedRates.isEmpty == false else {
+            guard !cachedRates.isEmpty else {
                 throw ExchangeDomainError.ratesUnavailable
             }
             let lastSuccessfulUpdate = await localCacheDataSource.getLastSuccessfulUpdate()
@@ -50,7 +50,7 @@ struct ExchangeRepository: ExchangeRepositoryProtocol {
     func fetchAvailableCurrencies() async -> [Currency] {
         do {
             let codes = try await remoteDataSource.fetchAvailableCurrencyCodes()
-            if codes.isEmpty == false {
+            if !codes.isEmpty {
                 await localCacheDataSource.saveCurrencyCodes(codes)
                 return codes.map(Currency.init(code:))
             }

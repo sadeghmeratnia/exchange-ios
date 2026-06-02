@@ -93,7 +93,7 @@ struct ExchangeListViewModelTests {
     @Test("dismiss error trigger clears error message")
     func dismissErrorClearsErrorMessage() async {
         let repository = MockExchangeRepository()
-        let initialState = ExchangeListState.initial().with(errorMessage: .some("boom"))
+        let initialState = ExchangeListState.initial().with(errorMessage: .set("boom"))
         let sut = makeSUT(repository: repository, initialState: initialState)
 
         sut.onTrigger(.dismissError)

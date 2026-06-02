@@ -22,6 +22,7 @@ final class CurrencyPickerViewModel: CurrencyPickerViewModelProtocol {
     private let reducer: CurrencyPickerReducer
     private let onSelectCurrency: (String) -> Void
     private let onClose: () -> Void
+    private var effectTask: Task<Void, Never>?
 
     init(
         initialState: CurrencyPickerState,
@@ -33,6 +34,10 @@ final class CurrencyPickerViewModel: CurrencyPickerViewModelProtocol {
         self.reducer = reducer
         self.onSelectCurrency = onSelectCurrency
         self.onClose = onClose
+    }
+
+    deinit {
+        effectTask?.cancel()
     }
 
     func onTrigger(_ trigger: CurrencyPickerTrigger) {
@@ -49,7 +54,10 @@ final class CurrencyPickerViewModel: CurrencyPickerViewModelProtocol {
         state = output.state
 
         if let effect = output.effect {
-            Task { await run(effect) }
+            effectTask?.cancel()
+            effectTask = Task { [weak self] in
+                await self?.run(effect)
+            }
         }
     }
 

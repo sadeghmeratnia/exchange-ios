@@ -30,6 +30,7 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
         }
         .padding(UIConstants.Spacing.lg)
         .background(Color(uiColor: .systemGroupedBackground))
+        .accessibilityIdentifier("exchangeListScreen")
         .onAppear {
             viewModel.onTrigger(.screenAppeared)
         }
@@ -96,7 +97,9 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
                     .stroke(Color(uiColor: .separator), lineWidth: 0.5))
 
             SwapButton {
-                viewModel.onTrigger(.swapTapped)
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    viewModel.onTrigger(.swapTapped)
+                }
             }
         }
     }

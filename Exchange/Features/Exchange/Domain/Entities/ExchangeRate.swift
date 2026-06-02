@@ -15,8 +15,4 @@ struct ExchangeRate: Equatable, Sendable, Codable {
     let ask: Decimal
     let bid: Decimal
     let timestamp: Date
-
-    var mid: Decimal {
-        (ask + bid) / 2
-    }
 }

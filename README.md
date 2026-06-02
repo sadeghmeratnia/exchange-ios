@@ -1,34 +1,22 @@
 # Exchange iOS
 
-A native SwiftUI currency exchange calculator that converts between USDc and a selection of fiat currencies, using live rates from the dolarapp API with offline-capable fallback.
-
-<!-- TODO: replace with your repository URL if you want a clone link in the README -->
+A native SwiftUI currency exchange calculator that converts between USDc and fiat currencies using live rates from the DolarApp API, with offline-capable fallback.
 
 ## Features
 
-- Convert between USDc and a selected fiat currency, editing either field and auto-updating the other.
-- Choose the non-USDc currency from a bottom sheet.
-- Swap the top and bottom currencies with a single tap.
-- Live rates from the remote API, with automatic fallback to cached rates when the network is unavailable.
-- Realtime vs. stale indication with a last-updated timestamp.
-- Locale-aware number input and formatting (comma- and dot-decimal locales).
-
-## Screenshots
-
-<!-- TODO: drop 2-3 screenshots or a short screen recording / GIF here.
-     Suggested shots: (1) main calculator, (2) currency picker sheet, (3) stale/offline banner.
-     Example:
-     | Calculator | Currency Picker | Offline |
-     |---|---|---|
-     | ![Calculator](docs/calculator.png) | ![Picker](docs/picker.png) | ![Offline](docs/offline.png) |
--->
+- Two-way conversion between USDc and a selected fiat currency — edit either field and the other updates automatically.
+- Currency picker presented as a bottom sheet for the non-USDc side.
+- Swap button to flip the two currencies in place.
+- Live rates with automatic fallback to cached rates when offline.
+- Realtime vs. stale indicator with a relative "last updated" timestamp.
+- Locale-aware number input and formatting (comma and dot decimal separators).
 
 ## Requirements
 
-- iOS 16.0+ <!-- TODO: confirm against the project's deployment target; APIs used (Locale.region, presentationDetents) require 16+ -->
-- Xcode 16 or later <!-- TODO: set to the Xcode version you built with -->
+- iOS 17.0+
+- Xcode 16+
 - Swift 5.9+
-- No third-party dependencies — the project builds with the standard Apple toolchain only.
+- No third-party dependencies.
 
 ## Getting Started
 
@@ -38,116 +26,98 @@ cd exchange-ios
 open Exchange.xcodeproj
 ```
 
-Then in Xcode:
+1. Select the **Exchange** scheme.
+2. Pick any iOS Simulator.
+3. **Cmd + R** to run.
 
-1. Select the `Exchange` scheme.
-2. Choose any iOS Simulator (e.g. iPhone 17 Pro).
-3. Run with `Cmd + R`.
+No package resolution or signing changes required.
 
-No package resolution, signing changes, or other setup is required.
+### Running Tests
 
-### Running tests
+Xcode: **Cmd + U**
 
-From Xcode: `Cmd + U`. From the command line:
+Command line:
 
 ```bash
 xcodebuild -project "Exchange.xcodeproj" \
   -scheme "Exchange" \
-  -destination "platform=iOS Simulator,name=iPhone 17 Pro" \
+  -destination "platform=iOS Simulator,name=iPhone 16 Pro" \
   -only-testing:"ExchangeTests" test
 ```
 
-<!-- TODO: adjust the simulator name to one installed on your machine -->
-
 ## Architecture
 
-The project uses a feature-first Clean Architecture split:
-
-- `Core/` — shared infrastructure: networking, dependency injection, presentation contracts, utilities, and localization.
-- `Features/Exchange/Domain` — entities, repository protocol, and use cases (pure business logic).
-- `Features/Exchange/Data` — DTOs, mappers, data sources, and the repository implementation.
-- `Features/Exchange/Presentation` — the reducer / view-model / view / state flow and the feature's root wiring.
-
-Presentation follows a unidirectional flow:
+The project follows a feature-first Clean Architecture layout:
 
 ```
-Trigger -> Action -> Reducer -> Effect -> ViewModel execution -> Action
+Exchange/
+├── Core/                  Networking, DI, presentation contracts, utilities, localization
+└── Features/Exchange/
+    ├── Domain/            Entities, repository protocol, use cases
+    ├── Data/              DTOs, mappers, data sources, repository implementation
+    └── Presentation/      State, actions, reducer, view model, views
 ```
 
-The reducer is a pure function `(state, action) -> (state, effect?)`, which makes UI logic deterministic and easy to test in isolation. Side effects (network calls) are executed by the view model and fed back in as actions.
-
-### Why this structure
-
-- Keeps business logic isolated from UI and transport concerns.
-- Makes conversion and reducer behaviour straightforward to unit test without UI.
-- Provides clear seams for swapping data sources and adding new features.
-
-## Exchange Rate Handling
-
-- The rates endpoint returns both an `ask` and a `bid` price per currency. Conversion uses the **mid price** (the average of ask and bid) as a neutral rate appropriate for a two-way calculator, rather than favouring the buy or sell side.
-- All conversion math uses `Decimal` end-to-end (never floating point) to avoid rounding errors with monetary values.
-- The initial load fetches the available currencies and the rates concurrently to reduce time-to-content.
-
-## API and Fallback Strategy
-
-Rates endpoint:
+Presentation uses a unidirectional data flow:
 
 ```
-GET https://api.dolarapp.dev/v1/tickers?currencies=MXN,ARS
+Trigger → Action → Reducer → (State, Effect?) → ViewModel executes Effect → Action
 ```
 
-Available-currencies endpoint (may be unavailable):
+The reducer is a pure function `(State, Action) → (State, Effect?)`, making UI logic deterministic and testable in isolation. Side effects (network calls) are executed by the view model and fed back as actions.
 
-```
-GET https://api.dolarapp.dev/v1/tickers-currencies
-```
+### Design Rationale
 
-Fallback behaviour:
+- Business logic is isolated from UI and transport concerns.
+- Conversion logic and reducer transitions are straightforward to unit-test without a running UI.
+- Clear protocol boundaries make it easy to swap data sources or extend with new features.
 
-- **Rates:** remote-first. On success, rates are cached and the quote is marked realtime. On failure, the app uses persisted cached rates (if any) and marks the quote as stale.
-- **Currency list:** the endpoint is not guaranteed to be available, so the app falls back to cached codes or a seeded default set (`MXN`, `ARS`, `BRL`, `COP`). The remote call is made behind a protocol, so when the endpoint goes live the app picks it up with no code changes.
+## API & Fallback Strategy
 
-## Edge Cases Handled
+| Endpoint | URL | Status |
+|---|---|---|
+| Exchange rates | `GET /v1/tickers?currencies=MXN,ARS` | Available |
+| Currency list | `GET /v1/tickers-currencies` | Not yet available |
 
-- **Empty or invalid input** clears the opposite field rather than producing a misleading value.
-- **Locale decimal separators** — input typed with either a comma or a dot decimal separator is parsed correctly, and output is formatted for the current locale.
-- **Offline cold launch** — rates are persisted, so the app can launch without a network connection and show the last known rates with a stale indicator.
-- **Currency endpoint unavailable** — the picker still populates from the cached/seed list.
-- **In-flight request cancellation** — superseded rate fetches are cancelled to avoid stale results overwriting newer ones.
-- **Swap** preserves the entered amount and recalculates the opposite side.
+**Rates:** Remote-first. On success the rates are cached locally and marked as realtime. On failure the app serves persisted cached rates (if any) and marks them as stale.
 
-## Currency Display Policy
+**Currency list:** Falls back to cached codes, then to a seeded default set (`MXN`, `ARS`, `BRL`, `COP`). The remote call is behind a protocol, so the app will pick up the endpoint automatically once it goes live.
 
-- The UI shows the currency code (matching the wireframe style); `USDC` is displayed as `USDc`.
-- Flags are rendered conservatively: a flag is shown only when a currency maps to a single, unambiguous region. For currencies tied to multiple regions, a neutral `globe` SF Symbol is shown instead of guessing. This keeps an unexpected currency from the API from rendering a misleading flag.
+## Key Design Decisions
 
-## Number and Locale Behavior
+- **Mid-price conversion** — The API returns both `ask` and `bid`. The app uses the midpoint `(ask + bid) / 2` as a neutral rate for a two-way calculator.
+- **Decimal-only math** — All conversion uses `Decimal` end-to-end with banker's rounding to avoid floating-point errors on monetary values.
+- **Conservative flag rendering** — A flag emoji is shown only when a currency maps to a single unambiguous region. Multi-region currencies (e.g. USD) get a neutral globe icon instead.
+- **Concurrent initial load** — Available currencies and rates are fetched in parallel to reduce time-to-content.
+- **Request cancellation** — Superseded rate fetches are cancelled so stale results never overwrite newer ones.
 
-- Input parsing and output formatting are locale-aware and support both comma-decimal and dot-decimal locales.
-- Decimal precision is preserved end-to-end for conversion correctness.
+## Edge Cases
 
-## Project Entry
-
-`ExchangeApp` builds the `AppContainer` (network client, logger) and asks `ExchangeFeatureBuilder` to compose the Exchange feature's dependency graph and produce its root view, which is hosted in a `NavigationStack`.
-
-<!-- TODO: if you keep the coordinator types, you can mention them here; if you collapse them, this description already matches the simplified entry. -->
+- Empty or invalid input clears the opposite field instead of showing a misleading value.
+- Locale decimal separators (comma or dot) are parsed and formatted correctly.
+- Offline cold launch displays the last cached rates with a stale indicator.
+- Currency endpoint unavailable — the picker populates from cached or seeded codes.
+- Swap preserves the entered amount and recalculates the opposite side.
 
 ## Testing
 
-Covered areas include:
+The test suite covers:
 
-- Conversion logic (including rounding and decimal handling).
-- Reducer transitions and emitted effects.
-- View-model trigger / action / effect execution.
+- Conversion logic including rounding and decimal precision.
+- Reducer state transitions and emitted effects.
+- View model trigger → action → effect execution.
 - Repository remote/cache fallback behaviour.
-- Networking client and retry policy.
+- Network client, retry policy, and endpoint construction.
 - Localized number parsing and currency display mapping.
+- UI tests for core user flows (launch, swap, input conversion).
 
-Tests use the Swift Testing framework.
+Tests use the **Swift Testing** framework (`@Suite`, `@Test`, `#expect`).
 
-## Trade-offs and Next Steps
+## Trade-offs & Future Work
 
-- **Navigation scope is intentionally minimal** — the app is a single primary screen, so it does not ship a full navigation coordinator. A coordinator/router layer would be introduced once the app grows to multiple screens and flows; the feature builder already acts as the per-feature composition root.
-- **Accessibility** — basic support is in place; richer VoiceOver labels and hints for the amount fields and swap control are a natural next addition.
-- **Currency metadata** — display names and flags are derived locally; these could move to backend-driven metadata once a richer currency API is available.
-- **Timestamps** — the API returns dates without a timezone, which are interpreted as UTC for the "last updated" display; this affects freshness labelling only, never conversion.
+- **Minimal navigation** — Single-screen app; a coordinator/router would be introduced when more screens are added.
+- **Accessibility** — Basic VoiceOver labels are in place; richer hints for the amount fields and swap control are a natural next step.
+- **Currency metadata** — Flags and display names are derived locally; these could move to backend-driven metadata when a richer API is available.
+- **Timezone assumption** — The API returns dates without a timezone; they are interpreted as UTC for freshness display only.
+- **No staleness ceiling** — Stale data is surfaced with a banner and relative timestamp, but no hard max-age currently blocks conversion.
+- **Cache scope** — Persisted rates reflect the latest fetched set (the currently visible pair), not a full per-currency history.

@@ -11,9 +11,15 @@ import SwiftUI
 
 struct SwapButton: View {
     let onTap: () -> Void
+    @State private var rotationDegrees: Double = 0
 
     var body: some View {
-        Button(action: onTap) {
+        Button {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                rotationDegrees += 180
+            }
+            onTap()
+        } label: {
             ZStack {
                 Circle()
                     .fill(Color.green)
@@ -21,9 +27,11 @@ struct SwapButton: View {
                 Image(systemName: "arrow.up.arrow.down")
                     .font(.footnote.weight(.bold))
                     .foregroundStyle(.white)
+                    .rotationEffect(.degrees(rotationDegrees))
             }
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Swap currencies")
+        .accessibilityIdentifier("swapButton")
     }
 }

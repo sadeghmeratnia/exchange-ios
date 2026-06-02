@@ -58,6 +58,22 @@ struct ExchangeListState: Equatable {
     }
 }
 
+// MARK: - Update
+
+extension ExchangeListState {
+    enum Update<T> {
+        case unchanged
+        case set(T)
+
+        func resolve(current: T) -> T {
+            switch self {
+            case .unchanged: current
+            case .set(let new): new
+            }
+        }
+    }
+}
+
 // MARK: - Semantic Updates
 
 extension ExchangeListState {
@@ -70,9 +86,9 @@ extension ExchangeListState {
               availableCurrencies: [Currency]? = nil,
               rates: [ExchangeRate]? = nil,
               isRealtimeRates: Bool? = nil,
-              lastUpdatedAt: Date?? = nil,
-              errorMessage: String?? = nil,
-              unitQuoteRate: Decimal?? = nil) -> ExchangeListState {
+              lastUpdatedAt: Update<Date?> = .unchanged,
+              errorMessage: Update<String?> = .unchanged,
+              unitQuoteRate: Update<Decimal?> = .unchanged) -> ExchangeListState {
         ExchangeListState(
             phase: phase ?? self.phase,
             topCurrency: topCurrency ?? self.topCurrency,
@@ -83,21 +99,21 @@ extension ExchangeListState {
             availableCurrencies: availableCurrencies ?? self.availableCurrencies,
             rates: rates ?? self.rates,
             isRealtimeRates: isRealtimeRates ?? self.isRealtimeRates,
-            lastUpdatedAt: lastUpdatedAt ?? self.lastUpdatedAt,
-            errorMessage: errorMessage ?? self.errorMessage,
-            unitQuoteRate: unitQuoteRate ?? self.unitQuoteRate)
+            lastUpdatedAt: lastUpdatedAt.resolve(current: self.lastUpdatedAt),
+            errorMessage: errorMessage.resolve(current: self.errorMessage),
+            unitQuoteRate: unitQuoteRate.resolve(current: self.unitQuoteRate))
     }
 
     func startingInitialLoad() -> ExchangeListState {
-        with(phase: .loading(.initial), errorMessage: .some(nil))
+        with(phase: .loading(.initial), errorMessage: .set(nil))
     }
 
     func startingRefresh() -> ExchangeListState {
-        with(phase: .loading(.refresh), errorMessage: .some(nil))
+        with(phase: .loading(.refresh), errorMessage: .set(nil))
     }
 
     func applyingLoadFailure(error: ExchangeDomainError) -> ExchangeListState {
         let message = error.errorDescription ?? L10n.Exchange.Error.ratesUnavailable
-        return with(phase: .error(message: message), errorMessage: .some(message))
+        return with(phase: .error(message: message), errorMessage: .set(message))
     }
 }
