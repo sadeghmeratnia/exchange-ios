@@ -46,6 +46,7 @@ struct CurrencyPickerView<VM: ViewModelProtocol>: View where VM.State == Currenc
                                         .frame(width: 18, height: 18)
                                 }
                             }
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }
