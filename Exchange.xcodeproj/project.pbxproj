@@ -30,9 +30,22 @@
 		72A497CC2FCF2C28002F1629 /* Exchange.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = Exchange.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		72B1E0012FD01234002797E3 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Core/UI/AccessibilityID.swift,
+			);
+			target = 7213B4ED2FCB09CF002797E3 /* ExchangeUITests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		7213B4D92FCB09CE002797E3 /* Exchange */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				72B1E0012FD01234002797E3 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
 			path = Exchange;
 			sourceTree = "<group>";
 		};

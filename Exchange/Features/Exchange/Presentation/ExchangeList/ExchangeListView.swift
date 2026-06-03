@@ -30,7 +30,8 @@ struct ExchangeListView<VM: ViewModelProtocol>: View where VM.State == ExchangeL
         }
         .padding(UIConstants.Spacing.lg)
         .background(Color(uiColor: .systemGroupedBackground))
-        .accessibilityIdentifier("exchangeListScreen")
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AccessibilityID.exchangeListScreen)
         .onAppear {
             viewModel.onTrigger(.screenAppeared)
         }

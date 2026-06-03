@@ -74,7 +74,7 @@ struct CurrencyAmountInputRow: View {
                 .focused($isAmountFieldFocused)
                 .offset(x: shakeOffset)
                 .accessibilityLabel("Amount in \(display.title)")
-                .accessibilityIdentifier("amountField_\(currencyCode)")
+                .accessibilityIdentifier(AccessibilityID.amountField(currencyCode: currencyCode))
         }
         .padding(.horizontal, UIConstants.Spacing.md)
         .padding(.vertical, UIConstants.Spacing.lg)

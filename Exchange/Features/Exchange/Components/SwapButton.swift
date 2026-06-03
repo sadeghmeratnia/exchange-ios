@@ -32,6 +32,6 @@ struct SwapButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Swap currencies")
-        .accessibilityIdentifier("swapButton")
+        .accessibilityIdentifier(AccessibilityID.swapButton)
     }
 }
